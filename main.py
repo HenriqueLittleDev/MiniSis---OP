@@ -55,52 +55,40 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
     def open_products_window(self):
-        try:
-            if self.search_window and self.search_window.isVisible():
-                self.search_window.activateWindow()
-                self.search_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.search_window = SearchWindow()
-        self.search_window.show()
+        if self.search_window is None:
+            self.search_window = SearchWindow()
+            self.search_window.destroyed.connect(lambda: setattr(self, 'search_window', None))
+            self.search_window.show()
+        else:
+            self.search_window.activateWindow()
+            self.search_window.raise_()
 
     def open_supplier_search_window(self):
-        try:
-            if self.supplier_search_window and self.supplier_search_window.isVisible():
-                self.supplier_search_window.activateWindow()
-                self.supplier_search_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.supplier_search_window = SupplierSearchWindow()
-        self.supplier_search_window.show()
+        if self.supplier_search_window is None:
+            self.supplier_search_window = SupplierSearchWindow()
+            self.supplier_search_window.destroyed.connect(lambda: setattr(self, 'supplier_search_window', None))
+            self.supplier_search_window.show()
+        else:
+            self.supplier_search_window.activateWindow()
+            self.supplier_search_window.raise_()
 
     def open_op_window(self):
-        try:
-            if self.op_window and self.op_window.isVisible():
-                self.op_window.activateWindow()
-                self.op_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.op_window = OPWindow()
-        self.op_window.show()
+        if self.op_window is None:
+            self.op_window = OPWindow()
+            self.op_window.destroyed.connect(lambda: setattr(self, 'op_window', None))
+            self.op_window.show()
+        else:
+            self.op_window.activateWindow()
+            self.op_window.raise_()
 
     def open_entry_search_window(self):
-        try:
-            if self.entry_search_window and self.entry_search_window.isVisible():
-                self.entry_search_window.activateWindow()
-                self.entry_search_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.entry_search_window = EntrySearchWindow()
-        self.entry_search_window.show()
+        if self.entry_search_window is None:
+            self.entry_search_window = EntrySearchWindow()
+            self.entry_search_window.destroyed.connect(lambda: setattr(self, 'entry_search_window', None))
+            self.entry_search_window.show()
+        else:
+            self.entry_search_window.activateWindow()
+            self.entry_search_window.raise_()
 
 def main():
     print("Inicializando o banco de dados...")
