@@ -77,14 +77,13 @@ class SupplierSearchWindow(QWidget):
         self.show_edit_window(supplier_id=supplier_id)
 
     def show_edit_window(self, supplier_id):
-        if self.edit_window and self.edit_window.isVisible():
+        if self.edit_window is None:
+            self.edit_window = SupplierEditWindow(supplier_id=supplier_id)
+            self.edit_window.destroyed.connect(self.on_edit_window_closed)
+            self.edit_window.show()
+        else:
             self.edit_window.activateWindow()
             self.edit_window.raise_()
-            return
-
-        self.edit_window = SupplierEditWindow(supplier_id=supplier_id)
-        self.edit_window.destroyed.connect(self.on_edit_window_closed)
-        self.edit_window.show()
 
     def on_edit_window_closed(self):
         self.edit_window = None

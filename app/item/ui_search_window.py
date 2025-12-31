@@ -161,20 +161,14 @@ class SearchWindow(QWidget):
 
     def show_edit_window(self, item_id):
         """Abre a janela de edição, garantindo que apenas uma instância exista e limpando a referência quando fechada."""
-        # Se a janela já existe e está visível, apenas a traga para a frente.
-        if self.edit_window and self.edit_window.isVisible():
+        from .ui_edit_window import EditWindow
+        if self.edit_window is None:
+            self.edit_window = EditWindow(item_id=item_id)
+            self.edit_window.destroyed.connect(self.on_edit_window_closed)
+            self.edit_window.show()
+        else:
             self.edit_window.activateWindow()
             self.edit_window.raise_()
-            return
-
-        from .ui_edit_window import EditWindow
-        self.edit_window = EditWindow(item_id=item_id)
-
-        # Conecta o sinal 'destroyed' para limpar a referência da janela quando ela for fechada.
-        # Isso previne o crash ao tentar reabrir a janela.
-        self.edit_window.destroyed.connect(self.on_edit_window_closed)
-
-        self.edit_window.show()
 
     def on_edit_window_closed(self):
         """Slot para limpar a referência da janela de edição e recarregar os itens."""

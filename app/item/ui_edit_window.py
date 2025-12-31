@@ -7,7 +7,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt
 from ..services.item_service import ItemService
 from ..production import composition_operations # To be refactored later
-from .ui_search_window import SearchWindow
 from ..ui_utils import NumericTableWidgetItem, show_error_message
 
 class EditWindow(QWidget):
@@ -246,6 +245,7 @@ class EditWindow(QWidget):
 
     def open_material_search(self):
         """Abre a janela de busca de itens em modo de seleção."""
+        from .ui_search_window import SearchWindow
         try:
             if self.search_window and self.search_window.isVisible():
                 self.search_window.activateWindow()
