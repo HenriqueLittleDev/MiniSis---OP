@@ -11,7 +11,7 @@ class SupplierRepository:
         try:
             cursor = conn.cursor()
             cursor.execute(
-                """INSERT INTO TFORNECEDOR
+                """INSERT INTO FORNECEDOR
                    (RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TELEFONE, EMAIL, LOGRADOURO, NUMERO, COMPLEMENTO, BAIRRO, CIDADE, UF, CEP)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 (razao_social, nome_fantasia, cnpj, phone, email, address['logradouro'], address['numero'], address['complemento'],
@@ -26,17 +26,17 @@ class SupplierRepository:
 
     def get_all(self):
         conn = self.db_manager.get_connection()
-        return conn.execute("SELECT * FROM TFORNECEDOR ORDER BY RAZAO_SOCIAL").fetchall()
+        return conn.execute("SELECT ID, NOME_FANTASIA FROM FORNECEDOR ORDER BY NOME_FANTASIA").fetchall()
 
     def get_by_id(self, supplier_id):
         conn = self.db_manager.get_connection()
-        return conn.execute("SELECT * FROM TFORNECEDOR WHERE ID = ?", (supplier_id,)).fetchone()
+        return conn.execute("SELECT * FROM FORNECEDOR WHERE ID = ?", (supplier_id,)).fetchone()
 
     def update(self, supplier_id, razao_social, nome_fantasia, cnpj, phone, email, address):
         conn = self.db_manager.get_connection()
         try:
             conn.execute(
-                """UPDATE TFORNECEDOR
+                """UPDATE FORNECEDOR
                    SET RAZAO_SOCIAL = ?, NOME_FANTASIA = ?, CNPJ = ?, TELEFONE = ?, EMAIL = ?,
                        LOGRADOURO = ?, NUMERO = ?, COMPLEMENTO = ?, BAIRRO = ?,
                        CIDADE = ?, UF = ?, CEP = ?
@@ -54,9 +54,26 @@ class SupplierRepository:
         conn = self.db_manager.get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute("DELETE FROM TFORNECEDOR WHERE ID = ?", (supplier_id,))
+            cursor.execute("DELETE FROM FORNECEDOR WHERE ID = ?", (supplier_id,))
             conn.commit()
             return cursor.rowcount > 0
         except sqlite3.Error:
             conn.rollback()
             return False
+
+    def search(self, search_text, search_field):
+        conn = self.db_manager.get_connection()
+
+        field_map = {
+            "ID": "ID",
+            "Razão Social": "RAZAO_SOCIAL",
+            "Nome Fantasia": "NOME_FANTASIA",
+            "CNPJ": "CNPJ",
+            "Cidade": "CIDADE"
+        }
+
+        column = field_map.get(search_field, "NOME_FANTASIA")
+
+        query = f"SELECT ID, RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TELEFONE, CIDADE, UF FROM FORNECEDOR WHERE {column} LIKE ?"
+
+        return conn.execute(query, (f'%{search_text}%',)).fetchall()
