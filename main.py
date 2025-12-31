@@ -8,7 +8,7 @@ from app.database import get_db_manager
 from app.item.ui_search_window import SearchWindow
 from app.production.ui_op_window import OPWindow
 from app.stock.ui_entry_search_window import EntrySearchWindow
-from app.supplier.ui_supplier_window import SupplierWindow
+from app.supplier.ui_supplier_search_window import SupplierSearchWindow
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -16,7 +16,7 @@ class MainWindow(QMainWindow):
         self.search_window = None
         self.op_window = None
         self.entry_search_window = None
-        self.supplier_window = None
+        self.supplier_search_window = None
 
         self.setWindowTitle("GP - MiniSis")
         self.setWindowIcon(QIcon("app/assets/logo.png"))
@@ -35,7 +35,7 @@ class MainWindow(QMainWindow):
         registers_menu.addAction(products_action)
 
         supplier_action = QAction("Fornecedores...", self)
-        supplier_action.triggered.connect(self.open_supplier_window)
+        supplier_action.triggered.connect(self.open_supplier_search_window)
         registers_menu.addAction(supplier_action)
 
         movement_menu = menu_bar.addMenu("&Movimento")
@@ -66,17 +66,17 @@ class MainWindow(QMainWindow):
         self.search_window = SearchWindow()
         self.search_window.show()
 
-    def open_supplier_window(self):
+    def open_supplier_search_window(self):
         try:
-            if self.supplier_window and self.supplier_window.isVisible():
-                self.supplier_window.activateWindow()
-                self.supplier_window.raise_()
+            if self.supplier_search_window and self.supplier_search_window.isVisible():
+                self.supplier_search_window.activateWindow()
+                self.supplier_search_window.raise_()
                 return
         except RuntimeError:
             pass
 
-        self.supplier_window = SupplierWindow()
-        self.supplier_window.show()
+        self.supplier_search_window = SupplierSearchWindow()
+        self.supplier_search_window.show()
 
     def open_op_window(self):
         try:

@@ -5,12 +5,12 @@ class SupplierService:
     def __init__(self):
         self.supplier_repository = SupplierRepository()
 
-    def add_supplier(self, name, cnpj, phone, email):
+    def add_supplier(self, name, cnpj, phone, email, address):
         if not name:
             return {"success": False, "message": "O nome do fornecedor é obrigatório."}
 
         try:
-            new_id = self.supplier_repository.add(name, cnpj, phone, email)
+            new_id = self.supplier_repository.add(name, cnpj, phone, email, address)
             if new_id:
                 return {"success": True, "data": new_id, "message": "Fornecedor adicionado com sucesso."}
             else:
@@ -35,12 +35,12 @@ class SupplierService:
         except Exception as e:
             return {"success": False, "message": f"Erro ao buscar fornecedor: {e}"}
 
-    def update_supplier(self, supplier_id, name, cnpj, phone, email):
+    def update_supplier(self, supplier_id, name, cnpj, phone, email, address):
         if not name:
             return {"success": False, "message": "O nome do fornecedor é obrigatório."}
 
         try:
-            if self.supplier_repository.update(supplier_id, name, cnpj, phone, email):
+            if self.supplier_repository.update(supplier_id, name, cnpj, phone, email, address):
                 return {"success": True, "message": "Fornecedor atualizado com sucesso."}
             else:
                 return {"success": False, "message": "Fornecedor com este nome já existe."}
@@ -49,9 +49,6 @@ class SupplierService:
 
     def delete_supplier(self, supplier_id):
         try:
-            # Check for dependencies before deleting
-            # (e.g., if the supplier is used in any stock entry)
-            # For now, we'll just delete directly.
             if self.supplier_repository.delete(supplier_id):
                 return {"success": True, "message": "Fornecedor excluído com sucesso."}
             else:

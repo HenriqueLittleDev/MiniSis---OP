@@ -71,7 +71,14 @@ class DatabaseManager:
             NOME TEXT NOT NULL UNIQUE,
             CNPJ TEXT,
             TELEFONE TEXT,
-            EMAIL TEXT
+            EMAIL TEXT,
+            LOGRADOURO TEXT,
+            NUMERO TEXT,
+            COMPLEMENTO TEXT,
+            BAIRRO TEXT,
+            CIDADE TEXT,
+            UF TEXT,
+            CEP TEXT
         )
         ''')
         # Tabela de Nota de Entrada (Mestre)
@@ -159,7 +166,7 @@ class DatabaseManager:
         self.connection.commit()
 
     def _run_migrations(self, cursor):
-        cursor.execute("PRAGMA table_info(TENTRADANOTA)")
+        cursor.execute("PRAGMA table_info(TENTRADANota)")
         columns_info = {column[1]: {'type': column[2], 'pk': column[5]} for column in cursor.fetchall()}
 
         if 'DATA_DIGITACAO' not in columns_info:
@@ -206,6 +213,14 @@ class DatabaseManager:
                 print(f"Erro durante a migração de fornecedor: {e}")
                 self.connection.rollback()
                 raise e
+
+        cursor.execute("PRAGMA table_info(TFORNECEDOR)")
+        supplier_columns = [column[1] for column in cursor.fetchall()]
+        address_columns = ['LOGRADOURO', 'NUMERO', 'COMPLEMENTO', 'BAIRRO', 'CIDADE', 'UF', 'CEP']
+        for col in address_columns:
+            if col not in supplier_columns:
+                cursor.execute(f'ALTER TABLE TFORNECEDOR ADD COLUMN {col} TEXT')
+
 
 def get_db_manager():
     return DatabaseManager()
