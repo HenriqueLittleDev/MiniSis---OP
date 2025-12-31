@@ -11,8 +11,8 @@ from .ui_op_search_window import OPSearchWindow
 from ..ui_utils import NumericTableWidgetItem
 
 class OPWindow(QWidget):
-    def __init__(self, op_id=None):
-        super().__init__()
+    def __init__(self, op_id=None, parent=None):
+        super().__init__(parent)
         self.current_op_id = op_id
         self.search_item_window = None
         self.search_op_window = None

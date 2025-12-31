@@ -12,8 +12,8 @@ from ..supplier.ui_supplier_search_window import SupplierSearchWindow
 from ..ui_utils import NumericTableWidgetItem, show_error_message
 
 class EntryEditWindow(QWidget):
-    def __init__(self, entry_id=None):
-        super().__init__()
+    def __init__(self, entry_id=None, parent=None):
+        super().__init__(parent)
         self.stock_service = StockService()
         self.supplier_service = SupplierService()
         self.current_entry_id = entry_id

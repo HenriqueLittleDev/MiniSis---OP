@@ -10,8 +10,8 @@ from ..production import composition_operations # To be refactored later
 from ..ui_utils import NumericTableWidgetItem, show_error_message
 
 class EditWindow(QWidget):
-    def __init__(self, item_id=None):
-        super().__init__()
+    def __init__(self, item_id=None, parent=None):
+        super().__init__(parent)
         self.item_service = ItemService()
         self.current_item_id = item_id
         self.has_unsaved_changes = False

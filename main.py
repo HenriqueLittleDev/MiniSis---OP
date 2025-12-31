@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
 
     def open_products_window(self):
         if self.search_window is None:
-            self.search_window = SearchWindow()
+            self.search_window = SearchWindow(parent=self)
             self.search_window.destroyed.connect(lambda: setattr(self, 'search_window', None))
             self.search_window.show()
         else:
@@ -65,7 +65,7 @@ class MainWindow(QMainWindow):
 
     def open_supplier_search_window(self):
         if self.supplier_search_window is None:
-            self.supplier_search_window = SupplierSearchWindow()
+            self.supplier_search_window = SupplierSearchWindow(parent=self)
             self.supplier_search_window.destroyed.connect(lambda: setattr(self, 'supplier_search_window', None))
             self.supplier_search_window.show()
         else:
@@ -74,7 +74,7 @@ class MainWindow(QMainWindow):
 
     def open_op_window(self):
         if self.op_window is None:
-            self.op_window = OPWindow()
+            self.op_window = OPWindow(parent=self)
             self.op_window.destroyed.connect(lambda: setattr(self, 'op_window', None))
             self.op_window.show()
         else:
@@ -83,7 +83,7 @@ class MainWindow(QMainWindow):
 
     def open_entry_search_window(self):
         if self.entry_search_window is None:
-            self.entry_search_window = EntrySearchWindow()
+            self.entry_search_window = EntrySearchWindow(parent=self)
             self.entry_search_window.destroyed.connect(lambda: setattr(self, 'entry_search_window', None))
             self.entry_search_window.show()
         else:

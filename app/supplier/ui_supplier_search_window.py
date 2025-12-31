@@ -16,8 +16,8 @@ def _safe_str(value):
 class SupplierSearchWindow(QWidget):
     supplier_selected = Signal(dict)
 
-    def __init__(self, selection_mode=False):
-        super().__init__()
+    def __init__(self, selection_mode=False, parent=None):
+        super().__init__(parent)
         self.supplier_service = SupplierService()
         self.edit_window = None
         self.selection_mode = selection_mode
@@ -117,7 +117,7 @@ class SupplierSearchWindow(QWidget):
 
     def show_edit_window(self, supplier_id):
         if self.edit_window is None:
-            self.edit_window = SupplierEditWindow(supplier_id=supplier_id)
+            self.edit_window = SupplierEditWindow(supplier_id=supplier_id, parent=self)
             self.edit_window.destroyed.connect(self.on_edit_window_closed)
             self.edit_window.show()
         else:

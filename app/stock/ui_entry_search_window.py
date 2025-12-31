@@ -9,8 +9,8 @@ from ..ui_utils import show_error_message
 from .ui_entry_edit_window import EntryEditWindow
 
 class EntrySearchWindow(QWidget):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
         self.stock_service = StockService()
         self.edit_window = None
         self.setWindowTitle("Pesquisa de Entradas de Insumo")
@@ -90,8 +90,9 @@ class EntrySearchWindow(QWidget):
         self.show_edit_window(entry_id=entry_id)
 
     def show_edit_window(self, entry_id):
+        # Pass `self` as the parent to the new window
         if self.edit_window is None:
-            self.edit_window = EntryEditWindow(entry_id=entry_id)
+            self.edit_window = EntryEditWindow(entry_id=entry_id, parent=self)
             self.edit_window.destroyed.connect(self.on_edit_window_closed)
             self.edit_window.show()
         else:

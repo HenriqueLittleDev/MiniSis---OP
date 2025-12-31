@@ -25,6 +25,8 @@ class StockService:
         try:
             self.stock_repository.update_entry_master(entry_id, entry_date, typing_date, supplier_id, note_number)
             self.stock_repository.update_entry_items(entry_id, items)
+            total_value = sum(item['quantidade'] * item['valor_unitario'] for item in items)
+            self.stock_repository.update_entry_total_value(entry_id, total_value)
             return {"success": True, "message": "Nota de entrada atualizada com sucesso."}
         except Exception as e:
             return {"success": False, "message": f"Erro ao atualizar nota de entrada: {e}"}
@@ -32,6 +34,8 @@ class StockService:
     def update_entry_items(self, entry_id, items):
         try:
             self.stock_repository.update_entry_items(entry_id, items)
+            total_value = sum(item['quantidade'] * item['valor_unitario'] for item in items)
+            self.stock_repository.update_entry_total_value(entry_id, total_value)
             return {"success": True, "message": "Itens da nota de entrada atualizados com sucesso."}
         except Exception as e:
             return {"success": False, "message": f"Erro ao atualizar os itens da nota de entrada: {e}"}

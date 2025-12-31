@@ -34,6 +34,16 @@ class StockRepository:
             conn.rollback()
             return False
 
+    def update_entry_total_value(self, entry_id, total_value):
+        conn = self.db_manager.get_connection()
+        try:
+            conn.execute("UPDATE ENTRADANOTA SET VALOR_TOTAL = ? WHERE ID = ?", (total_value, entry_id))
+            conn.commit()
+            return True
+        except sqlite3.Error:
+            conn.rollback()
+            return False
+
     def update_entry_items(self, entry_id, items):
         conn = self.db_manager.get_connection()
         try:
