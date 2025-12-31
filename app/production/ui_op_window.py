@@ -60,6 +60,7 @@ class OPWindow(QWidget):
         self.items_table.verticalHeader().setVisible(False)
         self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.items_table.setColumnHidden(0, True)
+        self.items_table.setStyleSheet("QTableView::item:selected { background-color: #D3D3D3; color: black; }")
         header = self.items_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
