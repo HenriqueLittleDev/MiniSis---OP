@@ -123,14 +123,14 @@ class OPWindow(QWidget):
                 self.add_item_to_table(item)
 
     def open_item_search(self):
-        try:
-            if self.search_item_window and self.search_item_window.isVisible():
-                self.search_item_window.activateWindow()
-                return
-        except RuntimeError: pass
-        self.search_item_window = SearchWindow(selection_mode=True, item_type_filter=['Produto', 'Ambos'])
-        self.search_item_window.item_selected.connect(self.add_item_from_search)
-        self.search_item_window.show()
+        if self.search_item_window is None:
+            self.search_item_window = SearchWindow(selection_mode=True, item_type_filter=['Produto', 'Ambos'])
+            self.search_item_window.item_selected.connect(self.add_item_from_search)
+            self.search_item_window.destroyed.connect(lambda: setattr(self, 'search_item_window', None))
+            self.search_item_window.show()
+        else:
+            self.search_item_window.activateWindow()
+            self.search_item_window.raise_()
 
     def add_item_from_search(self, item_data):
         for row in range(self.items_table.rowCount()):
@@ -170,14 +170,14 @@ class OPWindow(QWidget):
             self.items_table.removeRow(index)
 
     def open_op_search(self):
-        try:
-            if self.search_op_window and self.search_op_window.isVisible():
-                self.search_op_window.activateWindow()
-                return
-        except RuntimeError: pass
-        self.search_op_window = OPSearchWindow()
-        self.search_op_window.op_selected.connect(self.load_op_by_id)
-        self.search_op_window.show()
+        if self.search_op_window is None:
+            self.search_op_window = OPSearchWindow()
+            self.search_op_window.op_selected.connect(self.load_op_by_id)
+            self.search_op_window.destroyed.connect(lambda: setattr(self, 'search_op_window', None))
+            self.search_op_window.show()
+        else:
+            self.search_op_window.activateWindow()
+            self.search_op_window.raise_()
 
     def load_op_by_id(self, op_id):
         self.current_op_id = op_id

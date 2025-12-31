@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from ..services.stock_service import StockService
 from ..ui_utils import show_error_message
+from .ui_entry_edit_window import EntryEditWindow
 
 class EntrySearchWindow(QWidget):
     def __init__(self):
@@ -89,15 +90,13 @@ class EntrySearchWindow(QWidget):
         self.show_edit_window(entry_id=entry_id)
 
     def show_edit_window(self, entry_id):
-        from .ui_entry_edit_window import EntryEditWindow
-        if self.edit_window and self.edit_window.isVisible():
+        if self.edit_window is None:
+            self.edit_window = EntryEditWindow(entry_id=entry_id)
+            self.edit_window.destroyed.connect(self.on_edit_window_closed)
+            self.edit_window.show()
+        else:
             self.edit_window.activateWindow()
             self.edit_window.raise_()
-            return
-
-        self.edit_window = EntryEditWindow(entry_id=entry_id)
-        self.edit_window.destroyed.connect(self.on_edit_window_closed)
-        self.edit_window.show()
 
     def on_edit_window_closed(self):
         self.edit_window = None

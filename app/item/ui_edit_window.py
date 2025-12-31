@@ -246,17 +246,14 @@ class EditWindow(QWidget):
     def open_material_search(self):
         """Abre a janela de busca de itens em modo de seleção."""
         from .ui_search_window import SearchWindow
-        try:
-            if self.search_window and self.search_window.isVisible():
-                self.search_window.activateWindow()
-                self.search_window.raise_()
-                return
-        except RuntimeError:
-            pass # A janela foi fechada
-
-        self.search_window = SearchWindow(selection_mode=True, item_type_filter=['Insumo', 'Ambos'])
-        self.search_window.item_selected.connect(self.set_selected_material)
-        self.search_window.show()
+        if self.search_window is None:
+            self.search_window = SearchWindow(selection_mode=True, item_type_filter=['Insumo', 'Ambos'])
+            self.search_window.item_selected.connect(self.set_selected_material)
+            self.search_window.destroyed.connect(lambda: setattr(self, 'search_window', None))
+            self.search_window.show()
+        else:
+            self.search_window.activateWindow()
+            self.search_window.raise_()
 
     def set_selected_material(self, item_data):
         """Recebe o item selecionado da janela de busca e preenche o formulário."""

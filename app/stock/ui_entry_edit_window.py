@@ -182,24 +182,28 @@ class EntryEditWindow(QWidget):
             self.set_read_only(True)
 
     def open_supplier_search(self):
-        if self.search_supplier_window and self.search_supplier_window.isVisible():
+        if self.search_supplier_window is None:
+            self.search_supplier_window = SupplierSearchWindow(selection_mode=True)
+            self.search_supplier_window.supplier_selected.connect(self.set_selected_supplier)
+            self.search_supplier_window.destroyed.connect(lambda: setattr(self, 'search_supplier_window', None))
+            self.search_supplier_window.show()
+        else:
             self.search_supplier_window.activateWindow()
-            return
-        self.search_supplier_window = SupplierSearchWindow(selection_mode=True)
-        self.search_supplier_window.supplier_selected.connect(self.set_selected_supplier)
-        self.search_supplier_window.show()
+            self.search_supplier_window.raise_()
 
     def set_selected_supplier(self, supplier_data):
         self.selected_supplier_id = supplier_data['ID']
         self.supplier_display.setText(supplier_data['NOME_FANTASIA'] or supplier_data['RAZAO_SOCIAL'])
 
     def open_item_search(self):
-        if self.search_item_window and self.search_item_window.isVisible():
+        if self.search_item_window is None:
+            self.search_item_window = SearchWindow(selection_mode=True, item_type_filter=['Insumo', 'Ambos'])
+            self.search_item_window.item_selected.connect(self.add_item_from_search)
+            self.search_item_window.destroyed.connect(lambda: setattr(self, 'search_item_window', None))
+            self.search_item_window.show()
+        else:
             self.search_item_window.activateWindow()
-            return
-        self.search_item_window = SearchWindow(selection_mode=True, item_type_filter=['Insumo', 'Ambos'])
-        self.search_item_window.item_selected.connect(self.add_item_from_search)
-        self.search_item_window.show()
+            self.search_item_window.raise_()
 
     def add_item_from_search(self, item_data):
         for row in range(self.items_table.rowCount()):
