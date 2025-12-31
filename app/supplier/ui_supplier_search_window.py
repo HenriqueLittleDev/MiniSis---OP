@@ -9,6 +9,10 @@ from ..services.supplier_service import SupplierService
 from ..ui_utils import show_error_message
 from .ui_supplier_edit_window import SupplierEditWindow
 
+def _safe_str(value):
+    """Converte o valor para string, tratando None como uma string vazia."""
+    return str(value) if value is not None else ""
+
 class SupplierSearchWindow(QWidget):
     supplier_selected = Signal(dict)
 
@@ -66,8 +70,6 @@ class SupplierSearchWindow(QWidget):
         search_text = self.search_input.text()
 
         if search_text:
-            # Assuming a default search by "Nome Fantasia" for simplicity.
-            # Could be expanded with a QComboBox for more fields.
             response = self.supplier_service.search_suppliers("Nome Fantasia", search_text)
         else:
             response = self.supplier_service.get_all_suppliers()
@@ -76,11 +78,11 @@ class SupplierSearchWindow(QWidget):
             for supplier in response["data"]:
                 supplier_data = {
                     'ID': supplier['ID'],
-                    'RAZAO_SOCIAL': supplier['RAZAO_SOCIAL'],
-                    'NOME_FANTASIA': supplier['NOME_FANTASIA'],
-                    'CNPJ': supplier.get('CNPJ', ''),
-                    'TELEFONE': supplier.get('TELEFONE', ''),
-                    'EMAIL': supplier.get('EMAIL', '')
+                    'RAZAO_SOCIAL': _safe_str(supplier['RAZAO_SOCIAL']),
+                    'NOME_FANTASIA': _safe_str(supplier['NOME_FANTASIA']),
+                    'CNPJ': _safe_str(supplier['CNPJ']),
+                    'TELEFONE': _safe_str(supplier['TELEFONE']),
+                    'EMAIL': _safe_str(supplier['EMAIL'])
                 }
 
                 id_item = QStandardItem()
