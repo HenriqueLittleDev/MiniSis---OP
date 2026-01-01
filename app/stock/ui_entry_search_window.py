@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from app.services.stock_service import StockService
-from app.ui_utils import show_error_message
 
 class EntrySearchWindow(QWidget):
     entry_selected = Signal(int)
@@ -79,7 +78,7 @@ class EntrySearchWindow(QWidget):
         response = self.stock_service.list_entries(search_content, search_type_text)
 
         if not response["success"]:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
             return
 
         for entry in response["data"]:

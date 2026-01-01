@@ -8,7 +8,7 @@ from PySide6.QtCore import QDate, Qt
 from app.services.production_service import ProductionService
 from app.item.ui_search_window import SearchWindow
 from app.production.ui_op_search_window import OPSearchWindow
-from app.ui_utils import NumericTableWidgetItem, show_error_message
+from app.ui_utils import NumericTableWidgetItem
 
 class OPWindow(QWidget):
     def __init__(self, op_id=None, parent=None):
@@ -100,7 +100,7 @@ class OPWindow(QWidget):
             if response["success"]:
                 QMessageBox.information(self, "Sucesso", response["message"])
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
         else:
             response = self.production_service.create_op(due_date, items)
             if response["success"]:
@@ -109,7 +109,7 @@ class OPWindow(QWidget):
                 self.op_id_display.setText(str(self.current_op_id))
                 QMessageBox.information(self, "Sucesso", response["message"])
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
 
     def load_op_data(self):
         if not self.current_op_id: return
@@ -126,7 +126,7 @@ class OPWindow(QWidget):
             for item in details['items']:
                 self.add_item_to_table(item)
         else:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
 
 
     def open_item_search(self):

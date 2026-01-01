@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal, Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from app.services.production_service import ProductionService
-from app.ui_utils import show_error_message
 
 class OPSearchWindow(QWidget):
     op_selected = Signal(int)
@@ -70,7 +69,7 @@ class OPSearchWindow(QWidget):
                 ]
                 self.table_model.appendRow(row)
         else:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
 
 
     def handle_double_click(self, model_index):

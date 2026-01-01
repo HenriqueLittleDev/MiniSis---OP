@@ -9,7 +9,7 @@ from app.services.stock_service import StockService
 from app.services.supplier_service import SupplierService
 from app.item.ui_search_window import SearchWindow
 from app.supplier.ui_supplier_search_window import SupplierSearchWindow
-from app.ui_utils import NumericTableWidgetItem, show_error_message
+from app.ui_utils import NumericTableWidgetItem
 
 class EntryEditWindow(QWidget):
     def __init__(self, entry_id=None, parent=None):
@@ -124,7 +124,7 @@ class EntryEditWindow(QWidget):
         note_number = self.note_number_input.text()
 
         if not self.selected_supplier_id:
-            show_error_message(self, "Por favor, selecione um fornecedor.")
+            print("UI Error: Por favor, selecione um fornecedor.")
             return
 
         items = []
@@ -140,7 +140,7 @@ class EntryEditWindow(QWidget):
             if response["success"]:
                 QMessageBox.information(self, "Sucesso", response["message"])
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
         else:
             response = self.stock_service.create_entry(entry_date, typing_date, self.selected_supplier_id, note_number)
             if response["success"]:
@@ -150,12 +150,12 @@ class EntryEditWindow(QWidget):
                 self.entry_id_display.setText(str(self.current_entry_id))
                 QMessageBox.information(self, "Sucesso", response["message"])
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
 
     def load_entry_data(self):
         response = self.stock_service.get_entry_details(self.current_entry_id)
         if not response["success"]:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
             self.close()
             return
 
@@ -287,7 +287,7 @@ class EntryEditWindow(QWidget):
 
     def finalize_entry(self):
         if not self.current_entry_id:
-            show_error_message(self, "Salve a nota de entrada antes de finalizá-la.")
+            print("UI Error: Salve a nota de entrada antes de finalizá-la.")
             return
 
         reply = QMessageBox.question(
@@ -302,4 +302,4 @@ class EntryEditWindow(QWidget):
                 QMessageBox.information(self, "Sucesso", response["message"])
                 self.load_entry_data()
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")

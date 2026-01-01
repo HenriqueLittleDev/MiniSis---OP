@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from app.services.supplier_service import SupplierService
-from app.ui_utils import show_error_message
 
 class SupplierSearchWindow(QWidget):
     supplier_selected = Signal(dict)
@@ -84,7 +83,7 @@ class SupplierSearchWindow(QWidget):
             response = self.supplier_service.get_all_suppliers()
 
         if not response["success"]:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
             return
 
         for supplier in response["data"]:

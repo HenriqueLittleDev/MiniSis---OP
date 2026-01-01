@@ -6,7 +6,6 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from app.services.item_service import ItemService
-from app.ui_utils import show_error_message
 
 class SearchWindow(QWidget):
     item_selected = Signal(dict)
@@ -85,7 +84,7 @@ class SearchWindow(QWidget):
             response = self.item_service.get_all_items()
 
         if not response["success"]:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
             return
 
         items = response["data"]

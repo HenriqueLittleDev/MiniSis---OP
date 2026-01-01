@@ -1,12 +1,11 @@
 # app/supplier/ui_supplier_edit_window.py
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLineEdit,
-    QPushButton, QTabWidget, QFormLayout, QMessageBox
+    QPushButton, QTabWidget, QFormLayout
 )
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression
 from app.services.supplier_service import SupplierService
-from app.ui_utils import show_error_message
 
 class SupplierEditWindow(QWidget):
     def __init__(self, supplier_id=None, parent=None):
@@ -157,7 +156,7 @@ class SupplierEditWindow(QWidget):
             self.uf_input.setText(data.get("uf", ""))
             self.numero_input.setFocus()
         else:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
 
     def load_supplier_data(self):
         response = self.supplier_service.get_supplier_by_id(self.current_supplier_id)
@@ -166,7 +165,7 @@ class SupplierEditWindow(QWidget):
             self.razao_social_input.setText(supplier['RAZAO_SOCIAL'])
             self.nome_fantasia_input.setText(supplier['NOME_FANTASIA'])
             self.cnpj_input.setText(supplier['CNPJ'])
-            self.phone_input.setText(supplier['TELEFONE'])
+            self.phone_input.setText(supplier['TELEONE'])
             self.email_input.setText(supplier['EMAIL'])
             self.logradouro_input.setText(supplier['LOGRADOURO'])
             self.numero_input.setText(supplier['NUMERO'])
@@ -176,7 +175,7 @@ class SupplierEditWindow(QWidget):
             self.uf_input.setText(supplier['UF'])
             self.cep_input.setText(supplier['CEP'])
         else:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
 
     def save_supplier(self):
         razao_social = self.razao_social_input.text()
@@ -200,26 +199,26 @@ class SupplierEditWindow(QWidget):
             response = self.supplier_service.add_supplier(razao_social, nome_fantasia, cnpj, phone, email, address)
 
         if response["success"]:
-            QMessageBox.information(self, "Sucesso", response["message"])
+            print(f"Info: {response['message']}")
             if not self.current_supplier_id and response.get("data"):
                 self.current_supplier_id = response["data"]
                 self.setWindowTitle(f"Editando Fornecedor #{self.current_supplier_id}")
         else:
-            show_error_message(self, response["message"])
+            print(f"UI Error: {response['message']}")
 
     def delete_supplier(self):
         if not self.current_supplier_id:
-            show_error_message(self, "Nenhum fornecedor carregado para excluir.")
+            print("UI Error: Nenhum fornecedor carregado para excluir.")
             return
 
-        reply = QMessageBox.question(self, "Confirmar Exclusão", "Tem certeza que deseja excluir este fornecedor?", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            response = self.supplier_service.delete_supplier(self.current_supplier_id)
-            if response["success"]:
-                QMessageBox.information(self, "Sucesso", response["message"])
-                self.close()
-            else:
-                show_error_message(self, response["message"])
+        # Bypassing user confirmation as requested
+        print(f"Aviso: Excluindo fornecedor #{self.current_supplier_id} sem confirmação.")
+        response = self.supplier_service.delete_supplier(self.current_supplier_id)
+        if response["success"]:
+            print(f"Info: {response['message']}")
+            self.close()
+        else:
+            print(f"UI Error: {response['message']}")
 
     def clear_form(self):
         self.current_supplier_id = None

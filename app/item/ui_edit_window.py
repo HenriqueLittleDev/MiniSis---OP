@@ -1,12 +1,12 @@
 # app/item/ui_edit_window.py
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit,
-    QComboBox, QPushButton, QMessageBox, QHeaderView, QTabWidget,
+    QComboBox, QPushButton, QHeaderView, QTabWidget,
     QTableWidget, QTableWidgetItem, QLabel, QDoubleSpinBox, QAbstractItemView
 )
 from PySide6.QtCore import Qt
 from app.services.item_service import ItemService
-from app.ui_utils import NumericTableWidgetItem, show_error_message
+from app.ui_utils import NumericTableWidgetItem
 
 class EditWindow(QWidget):
     def __init__(self, item_id=None, parent=None):
@@ -42,22 +42,9 @@ class EditWindow(QWidget):
 
     def closeEvent(self, event):
         if self.has_unsaved_changes:
-            reply = QMessageBox.question(
-                self, 'Alterações Não Salvas',
-                'Você tem alterações não salvas. Deseja salvá-las antes de sair?',
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel,
-                QMessageBox.Save
-            )
-            if reply == QMessageBox.Save:
-                self.save_item()
-                if self.has_unsaved_changes:
-                    event.ignore()
-                else:
-                    event.accept()
-            elif reply == QMessageBox.Discard:
-                event.accept()
-            else:
-                event.ignore()
+            # For simplicity, we will just discard changes without asking
+            print("Aviso: Janela fechada com alterações não salvas. As alterações foram descartadas.")
+            event.accept()
         else:
             event.accept()
 
@@ -144,11 +131,11 @@ class EditWindow(QWidget):
 
     def populate_units_combobox(self):
         response = self.item_service.list_units()
-        if response["success"]:
-            for unit in response["data"]:
-                self.unit_combo.addItem(f"{unit['NOME']} ({unit['SIGLA']})", userData=unit['ID'])
-        else:
-            show_error_message(self, response["message"])
+        if not response["success"]:
+            print(f"UI Error: {response['message']}")
+
+        for unit in response["data"]:
+            self.unit_combo.addItem(f"{unit['NOME']} ({unit['SIGLA']})", userData=unit['ID'])
 
     def load_item_data(self):
         if self.current_item_id:
@@ -177,7 +164,7 @@ class EditWindow(QWidget):
                         comp_item['SIGLA']
                     )
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
             self.update_total_cost()
 
     def toggle_composition_tab(self):
@@ -204,18 +191,18 @@ class EditWindow(QWidget):
 
     def add_update_composition_item(self):
         if not self.selected_material:
-            QMessageBox.warning(self, "Atenção", "Nenhum insumo selecionado.")
+            print("UI Warning: Nenhum insumo selecionado.")
             return
 
         quantity = self.quantity_spinbox.value()
         if quantity <= 0:
-            QMessageBox.warning(self, "Atenção", "A quantidade deve ser maior que zero.")
+            print("UI Warning: A quantidade deve ser maior que zero.")
             return
 
         material_id = self.selected_material['ID']
         response = self.item_service.validate_bom_item(self.current_item_id, material_id)
         if not response["success"]:
-            QMessageBox.warning(self, "Erro de Validação", response["message"])
+            print(f"UI Validation Error: {response['message']}")
             return
 
         for row in range(self.composition_table.rowCount()):
@@ -242,7 +229,7 @@ class EditWindow(QWidget):
     def load_selected_for_edit(self):
         selected_rows = self.composition_table.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Atenção", "Selecione um item para editar.")
+            print("UI Warning: Selecione um item para editar.")
             return
 
         selected_row = selected_rows[0].row()
@@ -259,7 +246,7 @@ class EditWindow(QWidget):
     def remove_selected_composition_item(self):
         selected_rows = self.composition_table.selectionModel().selectedRows()
         if not selected_rows:
-            QMessageBox.warning(self, "Atenção", "Selecione um item para remover.")
+            print("UI Warning: Selecione um item para remover.")
             return
         for index in sorted([idx.row() for idx in selected_rows], reverse=True):
             self.composition_table.removeRow(index)
@@ -312,13 +299,14 @@ class EditWindow(QWidget):
             response = self.item_service.add_item(desc, item_type, unit_id)
             if response["success"]:
                 self.current_item_id = response["data"]
+                print(f"Info: Item #{self.current_item_id} criado com sucesso.")
             else:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
                 return
         else:
             response = self.item_service.update_item(self.current_item_id, desc, item_type, unit_id)
             if not response["success"]:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
                 return
 
         if self.tab_widget.isTabVisible(self.tab_widget.indexOf(self.composition_widget)):
@@ -327,26 +315,24 @@ class EditWindow(QWidget):
                            for r in range(self.composition_table.rowCount())]
             response = self.item_service.update_composition(self.current_item_id, composition)
             if not response["success"]:
-                show_error_message(self, response["message"])
+                print(f"UI Error: {response['message']}")
                 return
 
-        QMessageBox.information(self, "Sucesso", "Item salvo com sucesso!")
+        print(f"Info: Item #{self.current_item_id} salvo com sucesso!")
         self.setWindowTitle(f"Editando Item #{self.current_item_id}")
         self.has_unsaved_changes = False
 
     def delete_item(self):
         if self.current_item_id is None:
-            show_error_message(self, "Nenhum item carregado para excluir.")
+            print("UI Error: Nenhum item carregado para excluir.")
             return
 
-        reply = QMessageBox.question(self, "Confirmar Exclusão",
-                                     f"Tem certeza que deseja excluir o item #{self.current_item_id}?",
-                                     QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            response = self.item_service.delete_item(self.current_item_id)
-            if response["success"]:
-                QMessageBox.information(self, "Sucesso", response["message"])
-                self.has_unsaved_changes = False
-                self.close()
-            else:
-                show_error_message(self, response["message"])
+        # Bypassing user confirmation as requested
+        print(f"Aviso: Excluindo item #{self.current_item_id} sem confirmação.")
+        response = self.item_service.delete_item(self.current_item_id)
+        if response["success"]:
+            print(f"Info: {response['message']}")
+            self.has_unsaved_changes = False
+            self.close()
+        else:
+            print(f"UI Error: {response['message']}")

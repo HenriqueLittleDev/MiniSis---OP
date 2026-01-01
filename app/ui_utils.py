@@ -1,5 +1,5 @@
 # app/ui_utils.py
-from PySide6.QtWidgets import QTableWidgetItem, QMessageBox
+from PySide6.QtWidgets import QTableWidgetItem
 
 class NumericTableWidgetItem(QTableWidgetItem):
     """
@@ -12,9 +12,3 @@ class NumericTableWidgetItem(QTableWidgetItem):
         except (ValueError, TypeError):
             # Fallback to default string comparison if conversion fails
             return super().__lt__(other)
-
-def show_error_message(parent, message):
-    """
-    Displays a standardized error message box.
-    """
-    QMessageBox.critical(parent, "Erro", message)
