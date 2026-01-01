@@ -2,7 +2,7 @@
 import requests
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLineEdit,
-    QPushButton, QTabWidget, QFormLayout, QMessageBox
+    QPushButton, QTabWidget, QFormLayout, QMessageBox, QComboBox
 )
 from PySide6.QtGui import QRegularExpressionValidator
 from PySide6.QtCore import QRegularExpression
