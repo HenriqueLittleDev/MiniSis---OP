@@ -8,6 +8,7 @@ from app.database import get_db_manager
 from app.item.ui_search_window import SearchWindow
 from app.production.ui_op_window import OPWindow
 from app.stock.ui_entry_search_window import EntrySearchWindow
+from app.supplier.ui_supplier_search_window import SupplierSearchWindow
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -15,6 +16,7 @@ class MainWindow(QMainWindow):
         self.search_window = None
         self.op_window = None
         self.entry_search_window = None
+        self.supplier_search_window = None
 
         self.setWindowTitle("GP - MiniSis")
         self.setWindowIcon(QIcon("app/assets/logo.png"))
@@ -27,13 +29,15 @@ class MainWindow(QMainWindow):
     def setup_menus(self):
         menu_bar = self.menuBar()
 
-        # Menu Cadastros
         registers_menu = menu_bar.addMenu("&Cadastros")
         products_action = QAction("Produtos...", self)
         products_action.triggered.connect(self.open_products_window)
         registers_menu.addAction(products_action)
 
-        # Menu Movimento
+        supplier_action = QAction("Fornecedores...", self)
+        supplier_action.triggered.connect(self.open_supplier_search_window)
+        registers_menu.addAction(supplier_action)
+
         movement_menu = menu_bar.addMenu("&Movimento")
         entry_action = QAction("Entrada de Insumos...", self)
         entry_action.triggered.connect(self.open_entry_search_window)
@@ -43,7 +47,6 @@ class MainWindow(QMainWindow):
         op_action.triggered.connect(self.open_op_window)
         movement_menu.addAction(op_action)
 
-        # Menu Configurações
         settings_menu = menu_bar.addMenu("&Configurações")
 
     def setup_central_widget(self):
@@ -52,46 +55,42 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
 
     def open_products_window(self):
-        """Abre a janela de pesquisa de produtos, garantindo que apenas uma instância exista."""
-        try:
-            if self.search_window and self.search_window.isVisible():
-                self.search_window.activateWindow()
-                self.search_window.raise_()
-                return
-        except RuntimeError:
-            pass
+        if self.search_window is None:
+            self.search_window = SearchWindow()
+            self.search_window.destroyed.connect(lambda: setattr(self, 'search_window', None))
+            self.search_window.show()
+        else:
+            self.search_window.activateWindow()
+            self.search_window.raise_()
 
-        self.search_window = SearchWindow()
-        self.search_window.show()
+    def open_supplier_search_window(self):
+        if self.supplier_search_window is None:
+            self.supplier_search_window = SupplierSearchWindow()
+            self.supplier_search_window.destroyed.connect(lambda: setattr(self, 'supplier_search_window', None))
+            self.supplier_search_window.show()
+        else:
+            self.supplier_search_window.activateWindow()
+            self.supplier_search_window.raise_()
 
     def open_op_window(self):
-        """Abre a janela de Ordem de Produção, garantindo que apenas uma instância exista."""
-        try:
-            if self.op_window and self.op_window.isVisible():
-                self.op_window.activateWindow()
-                self.op_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.op_window = OPWindow()
-        self.op_window.show()
+        if self.op_window is None:
+            self.op_window = OPWindow()
+            self.op_window.destroyed.connect(lambda: setattr(self, 'op_window', None))
+            self.op_window.show()
+        else:
+            self.op_window.activateWindow()
+            self.op_window.raise_()
 
     def open_entry_search_window(self):
-        """Abre a janela de pesquisa de entradas de insumo, garantindo que apenas uma instância exista."""
-        try:
-            if self.entry_search_window and self.entry_search_window.isVisible():
-                self.entry_search_window.activateWindow()
-                self.entry_search_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.entry_search_window = EntrySearchWindow()
-        self.entry_search_window.show()
+        if self.entry_search_window is None:
+            self.entry_search_window = EntrySearchWindow()
+            self.entry_search_window.destroyed.connect(lambda: setattr(self, 'entry_search_window', None))
+            self.entry_search_window.show()
+        else:
+            self.entry_search_window.activateWindow()
+            self.entry_search_window.raise_()
 
 def main():
-    """Função principal que inicia a aplicação."""
     print("Inicializando o banco de dados...")
     get_db_manager()
 
