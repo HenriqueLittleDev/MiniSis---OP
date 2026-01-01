@@ -38,13 +38,17 @@ class ItemFormWindow(QWidget):
 
         # Carregar dados
         self.populate_units_combobox()
-        self.populate_suppliers_combobox()
         self.load_item_data()
 
         # Conectar sinal da ComboBox de tipo
         self.type_combo.currentTextChanged.connect(self.toggle_composition_tab)
 
         self.search_window = None # Para manter a referência da janela de busca
+        self.search_supplier_window = None # Para manter a referência da janela de busca de fornecedor
+        self.selected_supplier_id = None # Para armazenar o ID do fornecedor selecionado
+
+        # Conectar o botão de busca de fornecedor
+        self.search_supplier_button.clicked.connect(self.open_supplier_search)
 
         # Conectar sinais para detectar alterações
         self.description_input.textChanged.connect(self._set_unsaved_changes)
@@ -110,18 +114,24 @@ class ItemFormWindow(QWidget):
         main_widget = QWidget()
         layout = QFormLayout(main_widget)
 
-        self.codigo_interno_input = QLineEdit()
         self.description_input = QLineEdit()
         self.type_combo = QComboBox()
         self.type_combo.addItems(["Insumo", "Produto", "Ambos"])
         self.unit_combo = QComboBox()
-        self.supplier_combo = QComboBox()
 
-        layout.addRow("Código Interno:", self.codigo_interno_input)
+        # Novo layout para o fornecedor
+        supplier_layout = QHBoxLayout()
+        self.supplier_display = QLineEdit()
+        self.supplier_display.setReadOnly(True)
+        self.supplier_display.setPlaceholderText("Selecione um fornecedor...")
+        self.search_supplier_button = QPushButton("Buscar...")
+        supplier_layout.addWidget(self.supplier_display)
+        supplier_layout.addWidget(self.search_supplier_button)
+
         layout.addRow("Descrição:", self.description_input)
         layout.addRow("Tipo de Item:", self.type_combo)
         layout.addRow("Unidade:", self.unit_combo)
-        layout.addRow("Fornecedor Padrão:", self.supplier_combo)
+        layout.addRow("Fornecedor Padrão:", supplier_layout)
 
         self.tab_widget.addTab(main_widget, "Principal")
 
@@ -211,23 +221,11 @@ class ItemFormWindow(QWidget):
         else:
             show_error_message(self, "Error", response["message"])
 
-    def populate_suppliers_combobox(self):
-        from app.supplier.service import SupplierService
-        supplier_service = SupplierService()
-        response = supplier_service.get_all_suppliers()
-        if response["success"]:
-            self.supplier_combo.addItem("Nenhum", userData=None)
-            for supplier in response["data"]:
-                self.supplier_combo.addItem(supplier['NOME_FANTASIA'] or supplier['RAZAO_SOCIAL'], userData=supplier['ID'])
-        else:
-            show_error_message(self, "Error", response["message"])
-
     def load_item_data(self):
         if self.current_item_id:
             response = self.item_service.get_item_by_id(self.current_item_id)
             if response["success"]:
                 item = response["data"]
-                self.codigo_interno_input.setText(item['CODIGO_INTERNO'])
                 self.description_input.setText(item['DESCRICAO'])
                 self.type_combo.setCurrentText(item['TIPO_ITEM'])
 
@@ -235,9 +233,14 @@ class ItemFormWindow(QWidget):
                 if unit_index != -1:
                     self.unit_combo.setCurrentIndex(unit_index)
 
-                supplier_index = self.supplier_combo.findData(item['ID_FORNECEDOR_PADRAO'])
-                if supplier_index != -1:
-                    self.supplier_combo.setCurrentIndex(supplier_index)
+                self.selected_supplier_id = item.get('ID_FORNECEDOR_PADRAO')
+                if self.selected_supplier_id:
+                    from app.supplier.service import SupplierService
+                    supplier_service = SupplierService()
+                    supplier_response = supplier_service.get_supplier_by_id(self.selected_supplier_id)
+                    if supplier_response["success"]:
+                        supplier = supplier_response["data"]
+                        self.supplier_display.setText(supplier['NOME_FANTASIA'] or supplier['RAZAO_SOCIAL'])
 
                 self.load_composition_data()
 
@@ -396,14 +399,32 @@ class ItemFormWindow(QWidget):
             total += float(self.composition_table.item(row, 5).text())
         self.total_cost_label.setText(f"Custo Total da Composição: R$ {total:.4f}")
 
+    def open_supplier_search(self):
+        """Abre a janela de busca de fornecedores em modo de seleção."""
+        from app.supplier.ui_search_window import SupplierSearchWindow
+        if self.search_supplier_window is None:
+            self.search_supplier_window = SupplierSearchWindow(selection_mode=True)
+            self.search_supplier_window.supplier_selected.connect(self.set_selected_supplier)
+            self.search_supplier_window.destroyed.connect(lambda: setattr(self, 'search_supplier_window', None))
+            self.search_supplier_window.show()
+        else:
+            self.search_supplier_window.activateWindow()
+            self.search_supplier_window.raise_()
+
+    def set_selected_supplier(self, supplier_data):
+        """Recebe o fornecedor selecionado e atualiza a UI."""
+        self.selected_supplier_id = supplier_data['ID']
+        self.supplier_display.setText(supplier_data['NOME_FANTASIA'] or supplier_data['RAZAO_SOCIAL'])
+        self._set_unsaved_changes()
+
     def new_item(self):
         self.current_item_id = None
         self.setWindowTitle("Novo Item")
-        self.codigo_interno_input.clear()
         self.description_input.clear()
         self.type_combo.setCurrentIndex(0)
         self.unit_combo.setCurrentIndex(0)
-        self.supplier_combo.setCurrentIndex(0)
+        self.supplier_display.clear()
+        self.selected_supplier_id = None
         self.composition_table.setRowCount(0)
         self.update_total_cost()
         self.toggle_composition_tab()
@@ -417,11 +438,10 @@ class ItemFormWindow(QWidget):
 
     def save_item(self):
         # Coleta dados da aba Principal
-        codigo_interno = self.codigo_interno_input.text()
         description = self.description_input.text()
         item_type = self.type_combo.currentText()
         unit_id = self.unit_combo.currentData()
-        supplier_id = self.supplier_combo.currentData()
+        supplier_id = self.selected_supplier_id
 
         if not description or unit_id is None:
             QMessageBox.warning(self, "Atenção", "Descrição e Unidade são obrigatórios.")
@@ -429,14 +449,14 @@ class ItemFormWindow(QWidget):
 
         # Salva o item principal
         if self.current_item_id is None:  # Novo item
-            response = self.item_service.add_item(codigo_interno, description, item_type, unit_id, supplier_id)
+            response = self.item_service.add_item(description, item_type, unit_id, supplier_id)
             if response["success"]:
                 self.current_item_id = response["data"]
             else:
                 show_error_message(self, "Error", response["message"])
                 return
         else:  # Item existente
-            response = self.item_service.update_item(self.current_item_id, codigo_interno, description, item_type, unit_id, supplier_id)
+            response = self.item_service.update_item(self.current_item_id, description, item_type, unit_id, supplier_id)
             if not response["success"]:
                 show_error_message(self, "Error", response["message"])
                 return

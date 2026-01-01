@@ -6,12 +6,12 @@ class ItemRepository:
         self.db_manager = get_db_manager()
         self.connection = self.db_manager.get_connection()
 
-    def add(self, codigo_interno, description, item_type, unit_id, id_fornecedor_padrao):
+    def add(self, description, item_type, unit_id, id_fornecedor_padrao):
         cursor = self.connection.cursor()
         try:
             cursor.execute(
-                "INSERT INTO ITEM (CODIGO_INTERNO, DESCRICAO, TIPO_ITEM, ID_UNIDADE, ID_FORNECEDOR_PADRAO) VALUES (?, ?, ?, ?, ?)",
-                (codigo_interno, description, item_type, unit_id, id_fornecedor_padrao)
+                "INSERT INTO ITEM (DESCRICAO, TIPO_ITEM, ID_UNIDADE, ID_FORNECEDOR_PADRAO) VALUES (?, ?, ?, ?)",
+                (description, item_type, unit_id, id_fornecedor_padrao)
             )
             self.connection.commit()
             return cursor.lastrowid
@@ -22,7 +22,7 @@ class ItemRepository:
     def get_all(self):
         cursor = self.connection.cursor()
         cursor.execute("""
-            SELECT i.ID, i.CODIGO_INTERNO, i.DESCRICAO, i.TIPO_ITEM, u.SIGLA, i.SALDO_ESTOQUE, i.CUSTO_MEDIO
+            SELECT i.ID, i.DESCRICAO, i.TIPO_ITEM, u.SIGLA, i.SALDO_ESTOQUE, i.CUSTO_MEDIO
             FROM ITEM i
             JOIN UNIDADE u ON i.ID_UNIDADE = u.ID
             ORDER BY i.DESCRICAO
@@ -39,12 +39,12 @@ class ItemRepository:
         cursor.execute("SELECT ID, NOME, SIGLA FROM UNIDADE ORDER BY NOME")
         return cursor.fetchall()
 
-    def update(self, item_id, codigo_interno, description, item_type, unit_id, id_fornecedor_padrao):
+    def update(self, item_id, description, item_type, unit_id, id_fornecedor_padrao):
         cursor = self.connection.cursor()
         try:
             cursor.execute(
-                "UPDATE ITEM SET CODIGO_INTERNO = ?, DESCRICAO = ?, TIPO_ITEM = ?, ID_UNIDADE = ?, ID_FORNECEDOR_PADRAO = ? WHERE ID = ?",
-                (codigo_interno, description, item_type, unit_id, id_fornecedor_padrao, item_id)
+                "UPDATE ITEM SET DESCRICAO = ?, TIPO_ITEM = ?, ID_UNIDADE = ?, ID_FORNECEDOR_PADRAO = ? WHERE ID = ?",
+                (description, item_type, unit_id, id_fornecedor_padrao, item_id)
             )
             self.connection.commit()
             return True
