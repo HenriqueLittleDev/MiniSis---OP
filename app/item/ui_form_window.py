@@ -233,7 +233,7 @@ class ItemFormWindow(QWidget):
                 if unit_index != -1:
                     self.unit_combo.setCurrentIndex(unit_index)
 
-                self.selected_supplier_id = item.get('ID_FORNECEDOR_PADRAO')
+                self.selected_supplier_id = item['ID_FORNECEDOR_PADRAO']
                 if self.selected_supplier_id:
                     from app.supplier.service import SupplierService
                     supplier_service = SupplierService()
