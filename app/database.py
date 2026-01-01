@@ -26,7 +26,7 @@ class DatabaseManager:
 
         # Use a more flexible path that works across different OSes
         home_dir = os.path.expanduser("~")
-        return os.path.join(home_dir, "MiniSis", "OP", "dados", "OPMiniSis.db")
+        return os.path.join(home_dir, "MiniSis", "Gestão de Produção", "Dados", "DADOS.DB")
 
     def initialize_database(self):
         is_memory_db = self.db_path == ":memory:"
