@@ -26,7 +26,7 @@ class EntrySearchWindow(QWidget):
         search_group = QGroupBox("Pesquisa")
         search_layout = QHBoxLayout()
         self.search_field = QComboBox()
-        self.search_field.addItems(["ID", "Fornecedor", "Nº Nota", "Status"])
+        self.search_field.addItems(["ID", "Nº Nota", "Status"])
         self.search_term = QLineEdit()
         self.search_term.returnPressed.connect(self.load_entries)
         search_button = QPushButton("Buscar")
@@ -45,12 +45,12 @@ class EntrySearchWindow(QWidget):
         results_layout = QVBoxLayout()
         self.table_view = QTableView()
         self.table_model = QStandardItemModel()
-        self.table_model.setHorizontalHeaderLabels(["ID", "Data Entrada", "Fornecedor", "Nº Nota", "Valor Total", "Status"])
+        self.table_model.setHorizontalHeaderLabels(["ID", "Data Entrada", "Nº Nota", "Valor Total", "Status"])
         self.table_view.setModel(self.table_model)
 
         header = self.table_view.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.Stretch)
+        header.setSectionResizeMode(2, QHeaderView.Stretch)
 
         self.table_view.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table_view.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -74,7 +74,6 @@ class EntrySearchWindow(QWidget):
                 row = [
                     QStandardItem(str(entry['ID'])),
                     QStandardItem(entry.get('DATA_ENTRADA', '')),
-                    QStandardItem(entry.get('FORNECEDOR', '')),
                     QStandardItem(entry.get('NUMERO_NOTA', '')),
                     QStandardItem(f"{entry.get('VALOR_TOTAL', 0):.2f}" if entry.get('VALOR_TOTAL') is not None else "N/A"),
                     QStandardItem(entry.get('STATUS', ''))

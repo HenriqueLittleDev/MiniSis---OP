@@ -114,9 +114,10 @@ class StockRepository:
     def get_item_details(self, item_id):
         conn = self.db_manager.get_connection()
         query = """
-            SELECT i.*, f.NOME_FANTASIA AS NOME_FANTASIA_PADRAO
+            SELECT i.*, f.NOME_FANTASIA AS NOME_FANTASIA_PADRAO, u.SIGLA
             FROM ITEM i
             LEFT JOIN FORNECEDOR f ON i.ID_FORNECEDOR_PADRAO = f.ID
+            LEFT JOIN UNIDADE u ON i.ID_UNIDADE = u.ID
             WHERE i.ID = ?
         """
         return conn.execute(query, (item_id,)).fetchone()
