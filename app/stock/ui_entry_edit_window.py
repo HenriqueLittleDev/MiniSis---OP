@@ -172,15 +172,15 @@ class EntryEditWindow(QWidget):
         self.date_input.setDate(QDate.fromString(master['DATA_ENTRADA'], "yyyy-MM-dd"))
         self.typing_date_input.setDateTime(QDateTime.fromString(master['DATA_DIGITACAO'], "yyyy-MM-dd HH:mm:ss"))
 
-        self.note_number_input.setText(master.get('NUMERO_NOTA', ''))
-        self.observacao_input.setText(master.get('OBSERVACAO', ''))
-        self.status_display.setText(master.get('STATUS', ''))
+        self.note_number_input.setText(master['NUMERO_NOTA'] if 'NUMERO_NOTA' in master else '')
+        self.observacao_input.setText(master['OBSERVACAO'] if 'OBSERVACAO' in master else '')
+        self.status_display.setText(master['STATUS'] if 'STATUS' in master else '')
 
         self.items_table.setRowCount(0)
         for item in details['items']:
             self.add_item_to_table(item, is_loading=True)
 
-        if master.get('STATUS') == 'Finalizada':
+        if master['STATUS'] == 'Finalizada':
             self.set_read_only(True)
 
     def open_supplier_search_for_item(self, row):
@@ -227,8 +227,8 @@ class EntryEditWindow(QWidget):
             'ID_INSUMO': item['ID'],
             'DESCRICAO': item['DESCRICAO'],
             'SIGLA': item['SIGLA'],
-            'ID_FORNECEDOR': item.get('ID_FORNECEDOR_PADRAO'),
-            'FORNECEDOR': item.get('NOME_FANTASIA_PADRAO'),
+            'ID_FORNECEDOR': item['ID_FORNECEDOR_PADRAO'],
+            'FORNECEDOR': item['NOME_FANTASIA_PADRAO'],
             'QUANTIDADE': 1.0,
             'VALOR_UNITARIO': 0.0
         }
@@ -251,8 +251,8 @@ class EntryEditWindow(QWidget):
         unit_item = QTableWidgetItem(item['SIGLA'].upper())
         self.items_table.setItem(row, 2, unit_item)
 
-        supplier_item = QTableWidgetItem(item.get('FORNECEDOR', ''))
-        supplier_item.setData(Qt.UserRole, item.get('ID_FORNECEDOR'))
+        supplier_item = QTableWidgetItem(item['FORNECEDOR'] if 'FORNECEDOR' in item and item['FORNECEDOR'] else '')
+        supplier_item.setData(Qt.UserRole, item['ID_FORNECEDOR'] if 'ID_FORNECEDOR' in item else None)
         self.items_table.setItem(row, 3, supplier_item)
 
         self.items_table.setItem(row, 4, NumericTableWidgetItem(str(item['QUANTIDADE'])))
