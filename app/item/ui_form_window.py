@@ -49,6 +49,7 @@ class ItemFormWindow(QWidget):
 
         # Conectar o botão de busca de fornecedor
         self.search_supplier_button.clicked.connect(self.open_supplier_search)
+        self.clear_supplier_button.clicked.connect(self.clear_selected_supplier)
 
         # Conectar sinais para detectar alterações
         self.description_input.textChanged.connect(self._set_unsaved_changes)
@@ -126,8 +127,10 @@ class ItemFormWindow(QWidget):
         self.supplier_display.setReadOnly(True)
         self.supplier_display.setPlaceholderText("Selecione um fornecedor")
         self.search_supplier_button = QPushButton("Buscar")
+        self.clear_supplier_button = QPushButton("Limpar") # Novo botão
         supplier_layout.addWidget(self.supplier_display)
         supplier_layout.addWidget(self.search_supplier_button)
+        supplier_layout.addWidget(self.clear_supplier_button) # Adiciona ao layout
 
         layout.addRow("Código Interno:", self.codigo_interno_input)
         layout.addRow("Descrição:", self.description_input)
@@ -418,6 +421,12 @@ class ItemFormWindow(QWidget):
         """Recebe o fornecedor selecionado e atualiza a UI."""
         self.selected_supplier_id = supplier_data['ID']
         self.supplier_display.setText(supplier_data['NOME_FANTASIA'] or supplier_data['RAZAO_SOCIAL'])
+        self._set_unsaved_changes()
+
+    def clear_selected_supplier(self):
+        """Limpa o fornecedor padrão selecionado."""
+        self.selected_supplier_id = None
+        self.supplier_display.clear()
         self._set_unsaved_changes()
 
     def new_item(self):
