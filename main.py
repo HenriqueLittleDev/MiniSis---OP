@@ -3,23 +3,15 @@ import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QLabel
 from PySide6.QtGui import QAction, QIcon
 from PySide6.QtCore import Qt
-
-from app.database import get_db_manager
-from app.item.ui_search_window import SearchWindow
-from app.production.ui_op_window import OPWindow
-from app.stock.ui_entry_search_window import EntrySearchWindow
+from functools import partial
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.search_window = None
-        self.op_window = None
-        self.entry_search_window = None
-
+        self.windows = {}
         self.setWindowTitle("GP - MiniSis")
-        self.setWindowIcon(QIcon("app/assets/logo.png"))
+        self.setWindowIcon(QIcon('app/assets/logo.png'))
         self.setGeometry(100, 100, 1024, 768)
-
         self.setup_menus()
         self.setup_central_widget()
         self.statusBar().showMessage("Pronto")
@@ -29,76 +21,72 @@ class MainWindow(QMainWindow):
 
         # Menu Cadastros
         registers_menu = menu_bar.addMenu("&Cadastros")
-        products_action = QAction("Produtos...", self)
-        products_action.triggered.connect(self.open_products_window)
-        registers_menu.addAction(products_action)
+
+        from app.item.ui_search_window import ItemSearchWindow
+        self._add_menu_action(registers_menu, "Produtos", "item_search_window", ItemSearchWindow)
+
+        from app.supplier.ui_search_window import SupplierSearchWindow
+        self._add_menu_action(registers_menu, "Fornecedores", "supplier_search_window", SupplierSearchWindow)
+
+        registers_menu.addSeparator()
+
+        from app.item.ui_unit_window import UnitWindow
+        self._add_menu_action(registers_menu, "Unidades de Medida", "unit_window", UnitWindow)
 
         # Menu Movimento
         movement_menu = menu_bar.addMenu("&Movimento")
-        entry_action = QAction("Entrada de Insumos...", self)
-        entry_action.triggered.connect(self.open_entry_search_window)
-        movement_menu.addAction(entry_action)
 
-        op_action = QAction("Ordem de Produção...", self)
-        op_action.triggered.connect(self.open_op_window)
-        movement_menu.addAction(op_action)
+        from app.stock.ui_entry_search_window import EntrySearchWindow
+        self._add_menu_action(movement_menu, "Entrada de Insumos", "stock_entry_window", EntrySearchWindow)
+
+        from app.production.ui_order_window import ProductionOrderWindow
+        self._add_menu_action(movement_menu, "Ordem de Produção", "production_order_window", ProductionOrderWindow)
+
+        movement_menu.addSeparator()
+
+        from app.sales.ui_sale_search_window import SaleSearchWindow
+        self._add_menu_action(movement_menu, "Saída de Produtos", "sale_search_window", SaleSearchWindow)
 
         # Menu Configurações
         settings_menu = menu_bar.addMenu("&Configurações")
+
+    def _add_menu_action(self, menu, text, window_name, window_class):
+        action = QAction(text, self)
+        action.triggered.connect(partial(self._open_window, window_name, window_class))
+        menu.addAction(action)
 
     def setup_central_widget(self):
         central_widget = QLabel("Bem-vindo ao MiniSis - Gestão de Produção")
         central_widget.setAlignment(Qt.AlignCenter)
         self.setCentralWidget(central_widget)
 
-    def open_products_window(self):
-        """Abre a janela de pesquisa de produtos, garantindo que apenas uma instância exista."""
-        try:
-            if self.search_window and self.search_window.isVisible():
-                self.search_window.activateWindow()
-                self.search_window.raise_()
-                return
-        except RuntimeError:
-            pass
+    def _open_window(self, window_name, window_class):
+        if window_name not in self.windows or self.windows[window_name] is None:
+            instance = window_class()
+            self.windows[window_name] = instance
+            instance.destroyed.connect(lambda: self.windows.pop(window_name, None))
+            instance.show()
+        else:
+            self.windows[window_name].activateWindow()
+            self.windows[window_name].raise_()
 
-        self.search_window = SearchWindow()
-        self.search_window.show()
+import logging
 
-    def open_op_window(self):
-        """Abre a janela de Ordem de Produção, garantindo que apenas uma instância exista."""
-        try:
-            if self.op_window and self.op_window.isVisible():
-                self.op_window.activateWindow()
-                self.op_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.op_window = OPWindow()
-        self.op_window.show()
-
-    def open_entry_search_window(self):
-        """Abre a janela de pesquisa de entradas de insumo, garantindo que apenas uma instância exista."""
-        try:
-            if self.entry_search_window and self.entry_search_window.isVisible():
-                self.entry_search_window.activateWindow()
-                self.entry_search_window.raise_()
-                return
-        except RuntimeError:
-            pass
-
-        self.entry_search_window = EntrySearchWindow()
-        self.entry_search_window.show()
+logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
+                    format='%(name)s - %(levelname)s - %(message)s')
 
 def main():
-    """Função principal que inicia a aplicação."""
-    print("Inicializando o banco de dados...")
-    get_db_manager()
-
-    app = QApplication(sys.argv)
-    main_window = MainWindow()
-    main_window.show()
-    sys.exit(app.exec())
+    try:
+        logging.info("Application starting up.")
+        from app.database.db import get_db_manager
+        get_db_manager()
+        app = QApplication(sys.argv)
+        main_window = MainWindow()
+        main_window.show()
+        sys.exit(app.exec())
+    except Exception as e:
+        logging.critical("Unhandled exception", exc_info=True)
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
