@@ -53,9 +53,13 @@ class EntryEditWindow(QWidget):
         self.save_button.clicked.connect(self.save_entry)
         self.finalize_button = QPushButton("Finalizar Entrada")
         self.finalize_button.clicked.connect(self.finalize_entry)
+        self.reopen_button = QPushButton("Reabrir Entrada")
+        self.reopen_button.clicked.connect(self.reopen_entry)
+        self.reopen_button.setObjectName("reopen_button")
         header_layout.addStretch()
         header_layout.addWidget(self.save_button)
         header_layout.addWidget(self.finalize_button)
+        header_layout.addWidget(self.reopen_button)
         self.main_layout.addLayout(header_layout)
 
         form_group = QGroupBox("Dados da Nota de Entrada")
@@ -190,8 +194,8 @@ class EntryEditWindow(QWidget):
         for item in details['items']:
             self.add_item_to_table(item, is_loading=True)
 
-        if master['STATUS'] == 'Finalizada':
-            self.set_read_only(True)
+        is_finalizada = master['STATUS'] == 'Finalizada'
+        self.set_read_only(is_finalizada)
 
     def open_supplier_search_for_item(self, row):
         self.current_editing_row = row
@@ -336,10 +340,32 @@ class EntryEditWindow(QWidget):
 
         self.note_number_input.setReadOnly(read_only)
         self.items_table.setEditTriggers(QAbstractItemView.NoEditTriggers if read_only else QAbstractItemView.AllEditTriggers)
-        self.save_button.setDisabled(read_only)
-        self.finalize_button.setDisabled(read_only)
-        self.add_item_button.setDisabled(read_only)
-        self.remove_item_button.setDisabled(read_only)
+        # Controla a visibilidade dos botões baseado no status
+        self.save_button.setVisible(not read_only)
+        self.finalize_button.setVisible(not read_only)
+        self.add_item_button.setVisible(not read_only)
+        self.remove_item_button.setVisible(not read_only)
+        self.reopen_button.setVisible(read_only)
+
+    def reopen_entry(self):
+        if not self.current_entry_id:
+            return
+
+        reply = QMessageBox.question(
+            self, "Confirmar Reabertura",
+            "Você tem certeza que deseja reabrir esta entrada?\n\n"
+            "Esta ação irá estornar o lançamento de estoque e recalcular o custo médio dos insumos.\n"
+            "A nota voltará ao status 'Em Aberto' para edição.",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No
+        )
+
+        if reply == QMessageBox.Yes:
+            response = self.stock_service.reopen_entry(self.current_entry_id)
+            if response["success"]:
+                QMessageBox.information(self, "Sucesso", response["message"])
+                self.load_entry_data()  # Recarrega os dados para refletir o novo status
+            else:
+                show_error_message(self, "Erro", response["message"])
 
     def finalize_entry(self):
         # Validações
