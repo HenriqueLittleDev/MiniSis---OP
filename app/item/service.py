@@ -14,7 +14,7 @@ class ItemService:
             if new_id:
                 return {"success": True, "data": new_id, "message": "Item adicionado com sucesso."}
             else:
-                return {"success": False, "message": "Item com este código interno ou descrição já existe."}
+                return {"success": False, "message": "Já existe um item com esta descrição."}
         except Exception as e:
             return {"success": False, "message": f"Erro ao adicionar item: {e}"}
 
@@ -50,7 +50,7 @@ class ItemService:
             if self.item_repository.update(item_id, codigo_interno, description, item_type, unit_id, id_fornecedor_padrao):
                 return {"success": True, "message": "Item atualizado com sucesso."}
             else:
-                return {"success": False, "message": "Item com este código interno ou descrição já existe."}
+                return {"success": False, "message": "Já existe um item com esta descrição."}
         except Exception as e:
             return {"success": False, "message": f"Erro ao atualizar item: {e}"}
 

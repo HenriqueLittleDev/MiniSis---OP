@@ -60,7 +60,7 @@ class DatabaseManager:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS ITEM (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            CODIGO_INTERNO TEXT UNIQUE,
+            CODIGO_INTERNO TEXT,
             DESCRICAO TEXT NOT NULL UNIQUE,
             TIPO_ITEM TEXT NOT NULL CHECK(TIPO_ITEM IN ('Insumo', 'Produto', 'Ambos')),
             ID_UNIDADE INTEGER NOT NULL,
@@ -206,6 +206,7 @@ class DatabaseManager:
 
         # Continue with other migrations
         self._migrate_entradanota_table(cursor)
+        self._migrate_item_table(cursor)
 
         cursor.execute("PRAGMA table_info(FORNECEDOR)")
         supplier_columns = {col[1]: col for col in cursor.fetchall()}
@@ -269,6 +270,52 @@ class DatabaseManager:
         """)
 
         # 5. Remove a tabela temporária antiga
+        cursor.execute(f"DROP TABLE {temp_table_name}")
+
+    def _migrate_item_table(self, cursor):
+        table_name = "ITEM"
+        temp_table_name = f"{table_name}_temp_migration"
+
+        if not self._table_exists(cursor, table_name):
+            return
+
+        # Para garantir a remoção da restrição UNIQUE do CODIGO_INTERNO,
+        # vamos recriar a tabela.
+
+        # 1. Verifica se a coluna CODIGO_INTERNO existe na tabela antiga
+        cursor.execute(f"PRAGMA table_info({table_name})")
+        columns = [info[1] for info in cursor.fetchall()]
+        if 'CODIGO_INTERNO' not in columns:
+            # Se a coluna não existe, não há migração a ser feita.
+            return
+
+        # 2. Renomeia a tabela antiga
+        cursor.execute(f"ALTER TABLE {table_name} RENAME TO {temp_table_name}")
+
+        # 3. Cria a nova tabela com a estrutura correta (sem UNIQUE em CODIGO_INTERNO)
+        cursor.execute('''
+            CREATE TABLE ITEM (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                CODIGO_INTERNO TEXT,
+                DESCRICAO TEXT NOT NULL UNIQUE,
+                TIPO_ITEM TEXT NOT NULL CHECK(TIPO_ITEM IN ('Insumo', 'Produto', 'Ambos')),
+                ID_UNIDADE INTEGER NOT NULL,
+                ID_FORNECEDOR_PADRAO INTEGER,
+                SALDO_ESTOQUE REAL NOT NULL DEFAULT 0,
+                CUSTO_MEDIO REAL NOT NULL DEFAULT 0,
+                FOREIGN KEY (ID_UNIDADE) REFERENCES UNIDADE (ID) ON DELETE RESTRICT,
+                FOREIGN KEY (ID_FORNECEDOR_PADRAO) REFERENCES FORNECEDOR (ID) ON DELETE RESTRICT
+            )
+        ''')
+
+        # 4. Copia os dados da tabela antiga para a nova
+        cursor.execute(f"""
+            INSERT INTO {table_name} (ID, CODIGO_INTERNO, DESCRICAO, TIPO_ITEM, ID_UNIDADE, ID_FORNECEDOR_PADRAO, SALDO_ESTOQUE, CUSTO_MEDIO)
+            SELECT ID, CODIGO_INTERNO, DESCRICAO, TIPO_ITEM, ID_UNIDADE, ID_FORNECEDOR_PADRAO, SALDO_ESTOQUE, CUSTO_MEDIO
+            FROM {temp_table_name}
+        """)
+
+        # 5. Remove a tabela temporária
         cursor.execute(f"DROP TABLE {temp_table_name}")
 
 

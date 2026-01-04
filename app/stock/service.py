@@ -76,6 +76,27 @@ class StockService:
         except Exception as e:
             return {"success": False, "message": f"Um erro inesperado ocorreu: {e}"}
 
+    def reopen_entry(self, entry_id):
+        if not entry_id:
+            return {"success": False, "message": "ID da nota de entrada não fornecido."}
+
+        try:
+            # Verifica se a nota existe e está finalizada
+            details = self.stock_repository.get_entry_details(entry_id)
+            if not details:
+                return {"success": False, "message": "Nota de entrada não encontrada."}
+            if details['master']['STATUS'] != 'Finalizada':
+                return {"success": False, "message": "Apenas notas finalizadas podem ser reabertas."}
+
+            success = self.stock_repository.reopen_entry(entry_id)
+            if success:
+                return {"success": True, "message": f"Entrada #{entry_id} reaberta com sucesso. O estoque foi estornado."}
+            else:
+                return {"success": False, "message": "Erro no banco de dados ao tentar reabrir a entrada."}
+        except Exception as e:
+            return {"success": False, "message": f"Um erro inesperado ocorreu: {e}"}
+
+
     def get_item_details(self, item_id):
         try:
             item = self.stock_repository.get_item_details(item_id)
