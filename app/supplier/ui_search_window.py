@@ -1,7 +1,7 @@
 # app/supplier/ui_search_window.py
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QLineEdit,
-    QPushButton, QTableView, QHeaderView, QAbstractItemView
+    QPushButton, QTableView, QHeaderView, QAbstractItemView, QComboBox
 )
 from PySide6.QtGui import QStandardItemModel, QStandardItem
 from PySide6.QtCore import Signal, Qt
@@ -34,12 +34,18 @@ class SupplierSearchWindow(QWidget):
 
         search_group = QGroupBox("Pesquisa")
         search_layout = QHBoxLayout()
+
+        self.search_field_combo = QComboBox()
+        self.search_field_combo.addItems(["Nome Fantasia", "Razão Social", "CNPJ"])
+
         self.search_input = QLineEdit()
-        self.search_input.setPlaceholderText("Pesquisar por nome...")
         self.search_input.returnPressed.connect(self.load_suppliers)
+
         search_button = QPushButton("Buscar")
         search_button.clicked.connect(self.load_suppliers)
-        search_layout.addWidget(self.search_input)
+
+        search_layout.addWidget(self.search_field_combo)
+        search_layout.addWidget(self.search_input, 1)
         search_layout.addWidget(search_button)
 
         if not self.selection_mode:
@@ -70,9 +76,10 @@ class SupplierSearchWindow(QWidget):
     def load_suppliers(self):
         self.table_model.removeRows(0, self.table_model.rowCount())
         search_text = self.search_input.text()
+        search_field = self.search_field_combo.currentText()
 
         if search_text:
-            response = self.supplier_service.search_suppliers("Nome Fantasia", search_text)
+            response = self.supplier_service.search_suppliers(search_field, search_text)
         else:
             response = self.supplier_service.get_all_suppliers()
 

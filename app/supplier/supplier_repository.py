@@ -71,15 +71,18 @@ class SupplierRepository:
         conn = self.db_manager.get_connection()
 
         field_map = {
-            "ID": "ID",
             "Razão Social": "RAZAO_SOCIAL",
             "Nome Fantasia": "NOME_FANTASIA",
-            "CNPJ": "CNPJ",
-            "Cidade": "CIDADE"
+            "CNPJ": "CNPJ"
         }
 
         column = field_map.get(search_field, "NOME_FANTASIA")
 
-        query = f"SELECT ID, RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TELEFONE, EMAIL, CIDADE, UF FROM FORNECEDOR WHERE {column} LIKE ?"
+        if column == 'CNPJ':
+            query = f"SELECT ID, RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TELEFONE, EMAIL, CIDADE, UF, STATUS FROM FORNECEDOR WHERE {column} = ?"
+            params = (search_text,)
+        else:
+            query = f"SELECT ID, RAZAO_SOCIAL, NOME_FANTASIA, CNPJ, TELEFONE, EMAIL, CIDADE, UF, STATUS FROM FORNECEDOR WHERE {column} LIKE ?"
+            params = (f'%{search_text}%',)
 
-        return conn.execute(query, (f'%{search_text}%',)).fetchall()
+        return conn.execute(query, params).fetchall()

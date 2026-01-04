@@ -43,7 +43,7 @@ class ItemSearchWindow(QWidget):
         search_layout = QHBoxLayout()
 
         self.search_field_combo = QComboBox()
-        self.search_field_combo.addItems(["Descrição", "ID", "Unidade", "Quantidade"])
+        self.search_field_combo.addItems(["Descrição", "Código Interno", "Tipo", "ID"])
 
         self.search_text = QLineEdit()
         self.search_text.returnPressed.connect(self.load_items) # Busca ao pressionar Enter
@@ -68,7 +68,7 @@ class ItemSearchWindow(QWidget):
 
         self.table_view = QTableView()
         self.table_model = QStandardItemModel()
-        self.table_model.setHorizontalHeaderLabels(["ID", "Descrição", "Tipo", "Un.", "Quantidade", "Custo Unit."])
+        self.table_model.setHorizontalHeaderLabels(["ID", "Código Interno", "Descrição", "Tipo", "Un.", "Quantidade", "Custo Unit."])
         self.table_view.setModel(self.table_model)
         header = self.table_view.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -92,10 +92,12 @@ class ItemSearchWindow(QWidget):
 
         if search_content:
             search_type_map = {
-                "Descrição": "description",
-                "ID": "id"
+                "Descrição": "DESCRICAO",
+                "Código Interno": "CODIGO_INTERNO",
+                "Tipo": "TIPO_ITEM",
+                "ID": "ID"
             }
-            search_type = search_type_map.get(search_type_text, "description")
+            search_type = search_type_map.get(search_type_text, "DESCRICAO")
             response = self.item_service.search_items(search_type, search_content)
         else:
             response = self.item_service.get_all_items()
@@ -121,6 +123,7 @@ class ItemSearchWindow(QWidget):
 
             row = [
                 id_item,
+                QStandardItem(item['CODIGO_INTERNO']),
                 QStandardItem(item['DESCRICAO']),
                 QStandardItem(item['TIPO_ITEM']),
                 QStandardItem(item['SIGLA'].upper()),

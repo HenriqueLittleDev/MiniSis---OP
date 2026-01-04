@@ -114,6 +114,7 @@ class ItemFormWindow(QWidget):
         main_widget = QWidget()
         layout = QFormLayout(main_widget)
 
+        self.codigo_interno_input = QLineEdit()
         self.description_input = QLineEdit()
         self.type_combo = QComboBox()
         self.type_combo.addItems(["Insumo", "Produto", "Ambos"])
@@ -123,11 +124,12 @@ class ItemFormWindow(QWidget):
         supplier_layout = QHBoxLayout()
         self.supplier_display = QLineEdit()
         self.supplier_display.setReadOnly(True)
-        self.supplier_display.setPlaceholderText("Selecione um fornecedor...")
-        self.search_supplier_button = QPushButton("Buscar...")
+        self.supplier_display.setPlaceholderText("Selecione um fornecedor")
+        self.search_supplier_button = QPushButton("Buscar")
         supplier_layout.addWidget(self.supplier_display)
         supplier_layout.addWidget(self.search_supplier_button)
 
+        layout.addRow("Código Interno:", self.codigo_interno_input)
         layout.addRow("Descrição:", self.description_input)
         layout.addRow("Tipo de Item:", self.type_combo)
         layout.addRow("Unidade:", self.unit_combo)
@@ -165,7 +167,7 @@ class ItemFormWindow(QWidget):
         input_layout.addWidget(self.unit_label)
 
         # Botão de Busca
-        search_button = QPushButton("Buscar...")
+        search_button = QPushButton("Buscar")
         search_button.clicked.connect(self.open_material_search)
         input_layout.addWidget(search_button)
 
@@ -226,6 +228,7 @@ class ItemFormWindow(QWidget):
             response = self.item_service.get_item_by_id(self.current_item_id)
             if response["success"]:
                 item = response["data"]
+                self.codigo_interno_input.setText(item['CODIGO_INTERNO'])
                 self.description_input.setText(item['DESCRICAO'])
                 self.type_combo.setCurrentText(item['TIPO_ITEM'])
 
@@ -420,6 +423,7 @@ class ItemFormWindow(QWidget):
     def new_item(self):
         self.current_item_id = None
         self.setWindowTitle("Novo Item")
+        self.codigo_interno_input.clear()
         self.description_input.clear()
         self.type_combo.setCurrentIndex(0)
         self.unit_combo.setCurrentIndex(0)
@@ -438,6 +442,7 @@ class ItemFormWindow(QWidget):
 
     def save_item(self):
         # Coleta dados da aba Principal
+        codigo_interno = self.codigo_interno_input.text()
         description = self.description_input.text()
         item_type = self.type_combo.currentText()
         unit_id = self.unit_combo.currentData()
@@ -449,14 +454,14 @@ class ItemFormWindow(QWidget):
 
         # Salva o item principal
         if self.current_item_id is None:  # Novo item
-            response = self.item_service.add_item(description, item_type, unit_id, supplier_id)
+            response = self.item_service.add_item(codigo_interno, description, item_type, unit_id, supplier_id)
             if response["success"]:
                 self.current_item_id = response["data"]
             else:
                 show_error_message(self, "Error", response["message"])
                 return
         else:  # Item existente
-            response = self.item_service.update_item(self.current_item_id, description, item_type, unit_id, supplier_id)
+            response = self.item_service.update_item(self.current_item_id, codigo_interno, description, item_type, unit_id, supplier_id)
             if not response["success"]:
                 show_error_message(self, "Error", response["message"])
                 return

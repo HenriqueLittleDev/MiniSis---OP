@@ -3,6 +3,7 @@ import sqlite3
 import os
 import atexit
 import platform
+import logging
 
 class DatabaseManager:
     _instance = None
@@ -32,7 +33,7 @@ class DatabaseManager:
         self.connection = sqlite3.connect(self.db_path)
         self.connection.row_factory = sqlite3.Row
         self._create_tables()
-        print(f"Banco de dados inicializado em: {self.db_path}")
+        logging.info(f"Banco de dados inicializado em: {self.db_path}")
 
 
     def get_connection(self):
@@ -44,7 +45,7 @@ class DatabaseManager:
         if self.connection:
             self.connection.close()
             self.connection = None
-            print("Conexão com o banco de dados fechada.")
+            logging.info("Conexão com o banco de dados fechada.")
 
     def _create_tables(self):
         cursor = self.connection.cursor()
@@ -91,11 +92,9 @@ class DatabaseManager:
         cursor.execute('''
         CREATE TABLE IF NOT EXISTS ENTRADANOTA (
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            ID_FORNECEDOR INTEGER,
-            DATA TEXT NOT NULL,
             DATA_ENTRADA TEXT NOT NULL,
             DATA_DIGITACAO TEXT,
-            NUMERO_NOTA TEXT UNIQUE,
+            NUMERO_NOTA TEXT,
             VALOR_TOTAL REAL,
             OBSERVACAO TEXT,
             STATUS TEXT NOT NULL CHECK(STATUS IN ('Em Aberto', 'Finalizada')),
@@ -151,11 +150,34 @@ class DatabaseManager:
             ID INTEGER PRIMARY KEY AUTOINCREMENT,
             ID_ENTRADA INTEGER NOT NULL,
             ID_INSUMO INTEGER NOT NULL,
+            ID_FORNECEDOR INTEGER NOT NULL,
             QUANTIDADE REAL NOT NULL,
             VALOR_UNITARIO REAL NOT NULL,
             FOREIGN KEY (ID_ENTRADA) REFERENCES ENTRADANOTA (ID) ON DELETE RESTRICT,
             FOREIGN KEY (ID_INSUMO) REFERENCES ITEM (ID) ON DELETE RESTRICT,
+            FOREIGN KEY (ID_FORNECEDOR) REFERENCES FORNECEDOR (ID) ON DELETE RESTRICT,
             UNIQUE (ID_ENTRADA, ID_INSUMO)
+        )
+        ''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SAIDA (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            DATA_SAIDA TEXT NOT NULL,
+            VALOR_TOTAL REAL,
+            OBSERVACAO TEXT,
+            STATUS TEXT NOT NULL CHECK(STATUS IN ('Em Aberto', 'Finalizada'))
+        )
+        ''')
+        cursor.execute('''
+        CREATE TABLE IF NOT EXISTS SAIDA_ITENS (
+            ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            ID_SAIDA INTEGER NOT NULL,
+            ID_PRODUTO INTEGER NOT NULL,
+            QUANTIDADE REAL NOT NULL,
+            VALOR_UNITARIO REAL NOT NULL,
+            FOREIGN KEY (ID_SAIDA) REFERENCES SAIDA (ID) ON DELETE RESTRICT,
+            FOREIGN KEY (ID_PRODUTO) REFERENCES ITEM (ID) ON DELETE RESTRICT,
+            UNIQUE (ID_SAIDA, ID_PRODUTO)
         )
         ''')
 
@@ -183,12 +205,7 @@ class DatabaseManager:
                 cursor.execute(f"ALTER TABLE {old_name} RENAME TO {new_name}")
 
         # Continue with other migrations
-        cursor.execute("PRAGMA table_info(ENTRADANOTA)")
-        columns_info = {column[1]: {'type': column[2], 'pk': column[5]} for column in cursor.fetchall()}
-
-        if 'DATA_DIGITACAO' not in columns_info:
-            cursor.execute('ALTER TABLE ENTRADANOTA ADD COLUMN DATA_DIGITACAO TEXT')
-            cursor.execute('UPDATE ENTRADANOTA SET DATA_DIGITACAO = DATA_ENTRADA WHERE DATA_DIGITACAO IS NULL')
+        self._migrate_entradanota_table(cursor)
 
         cursor.execute("PRAGMA table_info(FORNECEDOR)")
         supplier_columns = {col[1]: col for col in cursor.fetchall()}
@@ -200,6 +217,60 @@ class DatabaseManager:
         for col in address_columns:
             if col not in supplier_columns:
                 cursor.execute(f'ALTER TABLE FORNECEDOR ADD COLUMN {col} TEXT')
+
+        # Migração para mover ID_FORNECEDOR para ENTRADANOTA_ITENS
+        cursor.execute("PRAGMA table_info(ENTRADANOTA_ITENS)")
+        entry_items_columns = {col[1] for col in cursor.fetchall()}
+        if 'ID_FORNECEDOR' not in entry_items_columns:
+            cursor.execute('ALTER TABLE ENTRADANOTA_ITENS ADD COLUMN ID_FORNECEDOR INTEGER REFERENCES FORNECEDOR(ID)')
+            # Tenta preencher com dados antigos, se existirem
+            cursor.execute("""
+                UPDATE ENTRADANOTA_ITENS
+                SET ID_FORNECEDOR = (
+                    SELECT ID_FORNECEDOR FROM ENTRADANOTA
+                    WHERE ENTRADANOTA.ID = ENTRADANOTA_ITENS.ID_ENTRADA
+                )
+            """)
+
+    def _table_exists(self, cursor, table_name):
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=?", (table_name,))
+        return cursor.fetchone() is not None
+
+    def _migrate_entradanota_table(self, cursor):
+        table_name = "ENTRADANOTA"
+        temp_table_name = f"{table_name}_temp_migration"
+
+        # 1. Verifica se a tabela ENTRADANOTA existe
+        if not self._table_exists(cursor, table_name):
+            return
+
+        # 2. Renomeia a tabela antiga
+        cursor.execute(f"ALTER TABLE {table_name} RENAME TO {temp_table_name}")
+
+        # 3. Cria a nova tabela com o esquema correto e sem a coluna ID_FORNECEDOR
+        cursor.execute('''
+            CREATE TABLE ENTRADANOTA (
+                ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                DATA_ENTRADA TEXT NOT NULL,
+                DATA_DIGITACAO TEXT,
+                NUMERO_NOTA TEXT,
+                VALOR_TOTAL REAL,
+                OBSERVACAO TEXT,
+                STATUS TEXT NOT NULL CHECK(STATUS IN ('Em Aberto', 'Finalizada'))
+            )
+        ''')
+
+        # 4. Copia os dados da tabela antiga para a nova
+        # A nova tabela não tem ID_FORNECEDOR, então não o selecionamos.
+        cursor.execute(f"""
+            INSERT INTO {table_name} (ID, DATA_ENTRADA, DATA_DIGITACAO, NUMERO_NOTA, VALOR_TOTAL, OBSERVACAO, STATUS)
+            SELECT ID, DATA_ENTRADA, DATA_DIGITACAO, NUMERO_NOTA, VALOR_TOTAL, OBSERVACAO, STATUS
+            FROM {temp_table_name}
+        """)
+
+        # 5. Remove a tabela temporária antiga
+        cursor.execute(f"DROP TABLE {temp_table_name}")
+
 
 def get_db_manager():
     return DatabaseManager()
