@@ -41,8 +41,8 @@ class MainWindow(QMainWindow):
 
         movement_menu.addSeparator()
         
-        from app.production.ui_order_window import ProductionOrderWindow
-        self._add_menu_action(movement_menu, "Ordem de Produção", "production_order_window", ProductionOrderWindow)
+        from app.production.ui_op_search_window import OPSearchWindow
+        self._add_menu_action(movement_menu, "Ordem de Produção", "op_search_window", OPSearchWindow)
         
         movement_menu.addSeparator()
 
@@ -77,6 +77,8 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
                     format='%(name)s - %(levelname)s - %(message)s')
 
+import traceback
+
 def main():
     try:
         logging.info("Application starting up.")
@@ -88,6 +90,7 @@ def main():
         sys.exit(app.exec())
     except Exception as e:
         logging.critical("Unhandled exception", exc_info=True)
+        traceback.print_exc()
         sys.exit(1)
 
 if __name__ == "__main__":

@@ -2,13 +2,12 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGroupBox, QFormLayout, QLineEdit,
     QPushButton, QMessageBox, QHeaderView, QTableWidget, QTableWidgetItem,
-    QLabel, QDateEdit, QAbstractItemView
+    QLabel, QDateEdit, QAbstractItemView, QInputDialog, QDialogButtonBox
 )
 from PySide6.QtCore import QDate, Qt
 from app.production import order_operations
 from app.item.ui_search_window import ItemSearchWindow
 from app.utils.date_utils import BRAZILIAN_DATE_FORMAT, format_qdate_for_db
-from app.production.ui_op_search_window import OPSearchWindow
 from app.utils.ui_utils import NumericTableWidgetItem
 
 class ProductionOrderWindow(QWidget):
@@ -34,10 +33,13 @@ class ProductionOrderWindow(QWidget):
         self.new_button.clicked.connect(self.new_op)
         self.save_button = QPushButton("Salvar OP")
         self.save_button.clicked.connect(self.save_op)
+        self.finalize_button = QPushButton("Finalizar OP")
+        self.finalize_button.clicked.connect(self.prompt_finalize_op)
         self.search_button = QPushButton("Pesquisar OP")
         self.search_button.clicked.connect(self.open_op_search)
         layout.addWidget(self.new_button)
         layout.addWidget(self.save_button)
+        layout.addWidget(self.finalize_button)
         layout.addStretch()
         layout.addWidget(self.search_button)
         self.main_layout.addLayout(layout)
@@ -49,7 +51,7 @@ class ProductionOrderWindow(QWidget):
         self.due_date_input = QDateEdit(calendarPopup=True)
         self.due_date_input.setDisplayFormat(BRAZILIAN_DATE_FORMAT)
         self.due_date_input.setDate(QDate.currentDate().addDays(7))
-        self.status_display = QLabel("Planejada")
+        self.status_display = QLabel("Em aberto")
         layout.addRow("ID da OP:", self.op_id_display)
         layout.addRow("Número:", self.numero_input)
         layout.addRow("Data Prevista:", self.due_date_input)
@@ -60,8 +62,8 @@ class ProductionOrderWindow(QWidget):
         items_group = QGroupBox("Produtos a Produzir")
         layout = QVBoxLayout()
         self.items_table = QTableWidget()
-        self.items_table.setColumnCount(4)
-        self.items_table.setHorizontalHeaderLabels(["ID Produto", "Descrição", "Qtd a Produzir", "Un."])
+        self.items_table.setColumnCount(6)
+        self.items_table.setHorizontalHeaderLabels(["ID Produto", "Descrição", "Qtd a Produzir", "Un.", "Custo Unitário", "Custo Total"])
         self.items_table.verticalHeader().setVisible(False)
         self.items_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.items_table.setColumnHidden(0, True)
@@ -69,6 +71,9 @@ class ProductionOrderWindow(QWidget):
         header = self.items_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setSectionResizeMode(1, QHeaderView.Stretch)
+        header.setSectionResizeMode(4, QHeaderView.Stretch)
+        header.setSectionResizeMode(5, QHeaderView.Stretch)
+        self.items_table.itemChanged.connect(self.update_total_cost)
         layout.addWidget(self.items_table)
         buttons_layout = QHBoxLayout()
         add_item_button = QPushButton("Adicionar Produto")
@@ -88,8 +93,9 @@ class ProductionOrderWindow(QWidget):
         self.op_id_display.setText("(Nova)")
         self.numero_input.clear()
         self.due_date_input.setDate(QDate.currentDate().addDays(7))
-        self.status_display.setText("Planejada")
+        self.status_display.setText("Em aberto")
         self.items_table.setRowCount(0)
+        self.update_button_states()
 
     def save_op(self):
         numero = self.numero_input.text()
@@ -114,6 +120,7 @@ class ProductionOrderWindow(QWidget):
                 QMessageBox.information(self, "Sucesso", f"Ordem de Produção #{new_id} criada.")
             else:
                 QMessageBox.critical(self, "Erro", "Não foi possível criar a Ordem de Produção.")
+        self.update_button_states()
 
     def load_op_data(self):
         if not self.current_op_id: return
@@ -129,6 +136,7 @@ class ProductionOrderWindow(QWidget):
             self.items_table.setRowCount(0)
             for item in details['items']:
                 self.add_item_to_table(item)
+        self.update_button_states()
 
     def open_item_search(self):
         if self.search_item_window is None:
@@ -148,6 +156,7 @@ class ProductionOrderWindow(QWidget):
         item_data['ID_PRODUTO'] = item_data['ID']
         item_data['QUANTIDADE_PRODUZIR'] = 1.0
         item_data['UNIDADE'] = item_data['SIGLA']
+        item_data['CUSTO_MEDIO'] = order_operations.calculate_product_cost(item_data['ID'])
         self.add_item_to_table(item_data)
 
     def add_item_to_table(self, item):
@@ -158,16 +167,22 @@ class ProductionOrderWindow(QWidget):
         desc_item = QTableWidgetItem(item['DESCRICAO'])
         qty_item = NumericTableWidgetItem(str(item['QUANTIDADE_PRODUZIR']))
         unit_item = QTableWidgetItem(item['UNIDADE'].upper())
+        cost_item = NumericTableWidgetItem(f"{item['CUSTO_MEDIO']:.2f}")
+        total_cost_item = NumericTableWidgetItem("0.00")
 
-        # Apenas a célula de quantidade deve ser editável
         id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
         desc_item.setFlags(desc_item.flags() & ~Qt.ItemIsEditable)
         unit_item.setFlags(unit_item.flags() & ~Qt.ItemIsEditable)
+        cost_item.setFlags(cost_item.flags() & ~Qt.ItemIsEditable)
+        total_cost_item.setFlags(total_cost_item.flags() & ~Qt.ItemIsEditable)
 
         self.items_table.setItem(row, 0, id_item)
         self.items_table.setItem(row, 1, desc_item)
         self.items_table.setItem(row, 2, qty_item)
         self.items_table.setItem(row, 3, unit_item)
+        self.items_table.setItem(row, 4, cost_item)
+        self.items_table.setItem(row, 5, total_cost_item)
+        self.update_total_cost(qty_item)
 
     def remove_item(self):
         rows = self.items_table.selectionModel().selectedRows()
@@ -178,8 +193,9 @@ class ProductionOrderWindow(QWidget):
             self.items_table.removeRow(index)
 
     def open_op_search(self):
+        from app.production.ui_op_search_window import OPSearchWindow
         if self.search_op_window is None:
-            self.search_op_window = OPSearchWindow()
+            self.search_op_window = OPSearchWindow(selection_mode=True)
             self.search_op_window.op_selected.connect(self.load_op_by_id)
             self.search_op_window.destroyed.connect(lambda: setattr(self, 'search_op_window', None))
             self.search_op_window.show()
@@ -190,3 +206,36 @@ class ProductionOrderWindow(QWidget):
     def load_op_by_id(self, op_id):
         self.current_op_id = op_id
         self.load_op_data()
+
+    def update_button_states(self):
+        is_saved = self.current_op_id is not None
+        is_concluida = self.status_display.text() == 'Concluida'
+        self.save_button.setEnabled(not is_concluida)
+        self.finalize_button.setEnabled(is_saved and not is_concluida)
+
+    def prompt_finalize_op(self):
+        if not self.current_op_id:
+            return
+
+        produced_qty, ok = QInputDialog.getDouble(self, "Finalizar Ordem de Produção", 
+                                                  "Quantidade produzida:", 
+                                                  decimals=2, min=0)
+        
+        if ok:
+            success, message = order_operations.finalize_op(self.current_op_id, produced_qty)
+            if success:
+                QMessageBox.information(self, "Sucesso", message)
+                self.load_op_data()
+            else:
+                QMessageBox.critical(self, "Erro", message)
+
+    def update_total_cost(self, item):
+        if item.column() == 2:  # Quantity column
+            row = item.row()
+            quantity = float(item.text())
+            cost_item = self.items_table.item(row, 4)
+            if cost_item:
+                unit_cost = float(cost_item.text())
+                total_cost = quantity * unit_cost
+                total_cost_item = self.items_table.item(row, 5)
+                total_cost_item.setText(f"{total_cost:.2f}")
